@@ -2,7 +2,7 @@ from ocp_resources.resource import NamespacedResource
 
 from utils.constants import KSERVE_API_GROUP
 
-
+# TODO: Move this to openshift-python-wrapper once we are confident
 class ServingRuntime(NamespacedResource):
     """
     ServingRuntime object

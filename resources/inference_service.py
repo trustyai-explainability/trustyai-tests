@@ -2,7 +2,7 @@ from ocp_resources.resource import NamespacedResource
 
 from utils.constants import KSERVE_API_GROUP
 
-
+# TODO: Move this to openshift-python-wrapper once we are confident
 class InferenceService(NamespacedResource):
     """
     InferenceService object
@@ -70,16 +70,11 @@ class InferenceService(NamespacedResource):
                 "modelFormat", {})["name"] = self.model_format_name
 
         if self.serving_runtime:
-            self.res.setdefault("spec", {}).setdefault("predictor", {}).setdefault("model", {})[
-                "runtime"] = self.serving_runtime
+            self.res.setdefault("spec", {}).setdefault("predictor", {}).setdefault("model", {})["runtime"] = self.serving_runtime
 
         if self.storage_name:
-            self.res.setdefault("spec", {}).setdefault("predictor", {}).setdefault("model", {}).setdefault("storage",
-                                                                                                           {})[
-                "key"] = self.storage_name
+            self.res.setdefault("spec", {}).setdefault("predictor", {}).setdefault("model", {}).setdefault("storage",{})["key"] = self.storage_name
 
         if self.storage_path:
-            self.res.setdefault("spec", {}).setdefault("predictor", {}).setdefault("model", {}).setdefault("storage",
-                                                                                                           {})[
-                "path"] = self.storage_path
+            self.res.setdefault("spec", {}).setdefault("predictor", {}).setdefault("model", {}).setdefault("storage",{})["path"] = self.storage_path
 
