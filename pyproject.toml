@@ -9,6 +9,8 @@ packages = [{include = "trustyai_tests"}]
 [tool.poetry.dependencies]
 python = "^3.12"
 openshift-python-wrapper = "^10.0.52"
+pytest = "^8.2.1"
+pyyaml = "^6.0.1"
 
 
 [build-system]
