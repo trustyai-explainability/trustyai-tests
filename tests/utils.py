@@ -1,4 +1,5 @@
 import http
+import json
 import logging
 import os
 import subprocess
@@ -17,6 +18,91 @@ logger = logging.getLogger(__name__)
 
 class TrustyAIPodNotFoundError(Exception):
     pass
+
+
+class ModelInputData:
+    def __init__(self, name, num_features, num_observations, data_type):
+        self.name = name
+        self.num_features = num_features
+        self.num_observations = num_observations
+        self.data_type = data_type
+
+
+class TrustyAIModelMetadata:
+    def __init__(self, input_tensor_name, output_tensor_name, num_observations, model_name, num_features):
+        self.input_tensor_name = input_tensor_name
+        self.output_tensor_name = output_tensor_name
+        self.num_observations = num_observations
+        self.model_name = model_name
+        self.num_features = num_features
+
+
+def verify_trustyai_model_metadata(namespace, model, data_path):
+    response = get_trustyai_model_metadata(namespace=namespace)
+    assert response.status_code == http.HTTPStatus.OK, f"Expected status code {http.HTTPStatus.OK}, but got {response.status_code}"
+
+    model_input_data = parse_input_data(data_path)
+    logger.info(f"Number of observations: {model_input_data.num_observations}")
+    model_metadata = parse_trustyai_model_metadata(response.content)
+
+    assert model_metadata.model_name == model.name, f"Expected model name '{model.name}', but got '{model_metadata.model_name}'"
+    assert model_metadata.input_tensor_name == model_input_data.name, f"Expected input tensor name '{model_input_data}', but got '{model_metadata.input_tensor_name}'"
+
+    expected_percentage_observations = 0.5
+    assert model_metadata.num_observations > model_input_data.num_observations * expected_percentage_observations, f"Expected number of observations to be greater than {model_input_data.num_observations * expected_percentage_observations}, but got {model_metadata.num_observations}"
+    assert model_metadata.num_features == model_input_data.num_features, f"Expected number of features '{model_input_data.num_features}', but got '{model_metadata.num_features}'"
+
+
+def parse_trustyai_model_metadata(model_metadata):
+    json_data = json.loads(model_metadata)
+
+    if isinstance(json_data, list) and len(json_data) > 0:
+        data = json_data[0]["data"]
+    else:
+        raise ValueError("Invalid JSON data format")
+
+    input_tensor_name = data["inputTensorName"]
+    output_tensor_name = data["outputTensorName"]
+    num_observations = data["observations"]
+    model_name = data["modelId"]
+
+    model_metadata = TrustyAIModelMetadata(
+        input_tensor_name=input_tensor_name,
+        output_tensor_name=output_tensor_name,
+        num_observations=num_observations,
+        model_name=model_name,
+        num_features=len(data["inputSchema"]["items"])
+    )
+    return model_metadata
+
+
+def parse_input_data(directory):
+    total_observations = 0
+    name = ""
+    num_features = 0
+    data_type = ""
+
+    for filename in os.listdir(directory):
+        if filename.endswith(".json"):
+            file_path = os.path.join(directory, filename)
+
+            with open(file_path, "r") as file:
+                data = json.load(file)
+
+            for input_data in data["inputs"]:
+                if not name:
+                    name = input_data["name"]
+                if not num_features:
+                    num_features = input_data["shape"][1]
+                if not data_type:
+                    data_type = input_data["datatype"]
+
+                num_observations = input_data["shape"][0]
+                total_observations += num_observations
+
+    model_input_data = ModelInputData(name, num_features, total_observations, data_type)
+    return model_input_data
+
 
 def wait_for_model_pods_registered(client, namespace):
     """Wait for model pods to be registered by TrustyAIService"""
@@ -53,13 +139,15 @@ def wait_for_model_pods_registered(client, namespace):
         if not pods_with_env_var or not all_pods_running:
             sleep(5)
 
+
 def get_ocp_token():
     token = subprocess.check_output(["oc", "whoami", "-t"]).decode().strip()
     return token
 
 
 def get_trustyai_pod(client, namespace):
-    pod = next((pod for pod in Pod.get(dyn_client=client, namespace=namespace.name) if TRUSTYAI_SERVICE in pod.name), None)
+    pod = next((pod for pod in Pod.get(dyn_client=client, namespace=namespace.name) if TRUSTYAI_SERVICE in pod.name),
+               None)
     if pod is None:
         raise TrustyAIPodNotFoundError(f"No TrustyAI pod found in namespace {namespace.name}")
     return pod
@@ -67,6 +155,7 @@ def get_trustyai_pod(client, namespace):
 
 def get_trustyai_service_route(namespace):
     return Route(namespace=namespace.name, name=TRUSTYAI_SERVICE)
+
 
 def send_data_to_inference_service(namespace, inference_service, data_path, max_retries=5, retry_delay=1):
     inference_route = Route(namespace=namespace.name, name=inference_service.name)
