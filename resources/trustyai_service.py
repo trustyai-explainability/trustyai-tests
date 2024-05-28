@@ -95,28 +95,3 @@ class TrustyAIService(NamespacedResource):
             self.res.setdefault("spec", {}).setdefault("metrics", {})["schedule"] = (
                 self.metrics_schedule_interval
             )
-
-        """
-        self.res["apiVersion"] = "trustyai.opendatahub.io/v1alpha1"
-        self.res["kind"] = "TrustyAIService"
-        self.res["metadata"] = {
-            "name": self.name,
-        }
-        self.res["spec"] = {
-            "replicas": 1,
-            "image": "quay.io/trustyaiservice/trustyai-service",
-            "tag": "latest",
-            "storage": {
-                "format": "PVC",
-                "folder": "/inputs",
-                "size": "1Gi",
-            },
-            "data": {
-                "filename": "data.csv",
-                "format": "CSV",
-            },
-            "metrics": {
-                "schedule": "5s",
-            },
-        }
-        """
