@@ -5,19 +5,21 @@ from utils.constants import OPENDATAHUB_IO
 
 class MinioSecret(Secret):
     def __init__(
-            self,
-            client,
-            name,
-            namespace,
-            aws_access_key_id,
-            aws_default_region,
-            aws_s3_bucket,
-            aws_s3_endpoint,
-            aws_secret_access_key,
-            type="Opaque",
-            **kwargs,
+        self,
+        client,
+        name,
+        namespace,
+        aws_access_key_id,
+        aws_default_region,
+        aws_s3_bucket,
+        aws_s3_endpoint,
+        aws_secret_access_key,
+        type="Opaque",
+        **kwargs,
     ):
-        super().__init__(name=name, namespace=namespace, type=type, client=client, **kwargs)
+        super().__init__(
+            name=name, namespace=namespace, type=type, client=client, **kwargs
+        )
         self.aws_access_key_id = aws_access_key_id
         self.aws_default_region = aws_default_region
         self.aws_s3_bucket = aws_s3_bucket

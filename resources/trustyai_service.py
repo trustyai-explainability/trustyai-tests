@@ -2,6 +2,7 @@ from ocp_resources.resource import NamespacedResource
 
 from utils.constants import TRUSTYAI_API_GROUP, TRUSTYAI_SERVICE_IMAGE
 
+
 # TODO: Move this to openshift-python-wrapper once we are confident
 class TrustyAIService(NamespacedResource):
     """
@@ -11,21 +12,21 @@ class TrustyAIService(NamespacedResource):
     api_group = TRUSTYAI_API_GROUP
 
     def __init__(
-            self,
-            replicas=1,
-            image=TRUSTYAI_SERVICE_IMAGE,
-            tag="latest",
-            storage_format=None,
-            storage_folder=None,
-            storage_size=None,
-            data_filename=None,
-            data_format=None,
-            metrics_schedule_interval=None,
-            name=None,
-            namespace=None,
-            yaml_file=None,
-            client=None,
-            **kwargs,
+        self,
+        replicas=1,
+        image=TRUSTYAI_SERVICE_IMAGE,
+        tag="latest",
+        storage_format=None,
+        storage_folder=None,
+        storage_size=None,
+        data_filename=None,
+        data_format=None,
+        metrics_schedule_interval=None,
+        name=None,
+        namespace=None,
+        yaml_file=None,
+        client=None,
+        **kwargs,
     ):
         """
         TrustyAIService object
@@ -46,11 +47,7 @@ class TrustyAIService(NamespacedResource):
             client (DynamicClient): DynamicClient to use.
         """
         super().__init__(
-            name=name,
-            namespace=namespace,
-            yaml_file=yaml_file,
-            client=client,
-            **kwargs
+            name=name, namespace=namespace, yaml_file=yaml_file, client=client, **kwargs
         )
         self.replicas = replicas
         self.image = image
@@ -70,22 +67,34 @@ class TrustyAIService(NamespacedResource):
         self.res.setdefault("spec", {})["tag"] = self.tag
 
         if self.storage_format:
-            self.res.setdefault("spec", {}).setdefault("storage", {})["format"] = self.storage_format
+            self.res.setdefault("spec", {}).setdefault("storage", {})["format"] = (
+                self.storage_format
+            )
 
         if self.storage_folder:
-            self.res.setdefault("spec", {}).setdefault("storage", {})["folder"] = self.storage_folder
+            self.res.setdefault("spec", {}).setdefault("storage", {})["folder"] = (
+                self.storage_folder
+            )
 
         if self.storage_size:
-            self.res.setdefault("spec", {}).setdefault("storage", {})["size"] = self.storage_size
+            self.res.setdefault("spec", {}).setdefault("storage", {})["size"] = (
+                self.storage_size
+            )
 
         if self.data_filename:
-            self.res.setdefault("spec", {}).setdefault("data", {})["filename"] = self.data_filename
+            self.res.setdefault("spec", {}).setdefault("data", {})["filename"] = (
+                self.data_filename
+            )
 
         if self.data_format:
-            self.res.setdefault("spec", {}).setdefault("data", {})["format"] = self.data_format
+            self.res.setdefault("spec", {}).setdefault("data", {})["format"] = (
+                self.data_format
+            )
 
         if self.metrics_schedule_interval:
-            self.res.setdefault("spec", {}).setdefault("metrics", {})["schedule"] = self.metrics_schedule_interval
+            self.res.setdefault("spec", {}).setdefault("metrics", {})["schedule"] = (
+                self.metrics_schedule_interval
+            )
 
         """
         self.res["apiVersion"] = "trustyai.opendatahub.io/v1alpha1"

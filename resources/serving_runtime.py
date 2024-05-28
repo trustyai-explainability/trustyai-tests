@@ -2,6 +2,7 @@ from ocp_resources.resource import NamespacedResource
 
 from utils.constants import KSERVE_API_GROUP
 
+
 # TODO: Move this to openshift-python-wrapper once we are confident
 class ServingRuntime(NamespacedResource):
     """
@@ -49,10 +50,12 @@ class ServingRuntime(NamespacedResource):
             yaml_file (yaml): yaml file for the resource.
             client (DynamicClient): DynamicClient to use.
         """
-        super().__init__(name=name, namespace=namespace, yaml_file=yaml_file, client=client, **kwargs)
+        super().__init__(
+            name=name, namespace=namespace, yaml_file=yaml_file, client=client, **kwargs
+        )
         self.supported_model_formats = supported_model_formats
-        self.protocol_versions = protocol_versions,
-        self.multi_model = multi_model,
+        self.protocol_versions = (protocol_versions,)
+        self.multi_model = (multi_model,)
         self.containers = containers
         self.grpc_endpoint = grpc_endpoint
         self.grpc_data_endpoint = grpc_data_endpoint
@@ -66,12 +69,14 @@ class ServingRuntime(NamespacedResource):
         super().to_dict()
 
         if self.enable_route:
-            self.res["metadata"].setdefault("annotations", {}).update({
-                "enable-route": "true"
-            })
+            self.res["metadata"].setdefault("annotations", {}).update(
+                {"enable-route": "true"}
+            )
 
         if self.supported_model_formats:
-            self.res.setdefault("spec", {})["supportedModelFormats"] = self.supported_model_formats
+            self.res.setdefault("spec", {})["supportedModelFormats"] = (
+                self.supported_model_formats
+            )
 
         if self.protocol_versions:
             self.res.setdefault("spec", {})["protocolVersions"] = self.protocol_versions
@@ -80,30 +85,34 @@ class ServingRuntime(NamespacedResource):
             self.res.setdefault("spec", {})["multiModel"] = True
 
         if self.grpc_endpoint:
-            self.res.setdefault("spec", {})["grpcEndpoint"] = f"port:{self.grpc_endpoint}"
+            self.res.setdefault("spec", {})["grpcEndpoint"] = (
+                f"port:{self.grpc_endpoint}"
+            )
 
         if self.grpc_data_endpoint:
-            self.res.setdefault("spec", {})["grpcDataEndpoint"] = f"port:{self.grpc_data_endpoint}"
+            self.res.setdefault("spec", {})["grpcDataEndpoint"] = (
+                f"port:{self.grpc_data_endpoint}"
+            )
 
         if self.containers:
             self.res.setdefault("spec", {})["containers"] = self.containers
 
         if self.server_type:
-            self.res.setdefault("spec", {}).setdefault("builtInAdapter", {}).update({
-                "serverType": self.server_type
-            })
+            self.res.setdefault("spec", {}).setdefault("builtInAdapter", {}).update(
+                {"serverType": self.server_type}
+            )
 
         if self.runtime_mgmt_port:
-            self.res.setdefault("spec", {}).setdefault("builtInAdapter", {}).update({
-                "runtimeManagementPort": self.runtime_mgmt_port
-            })
+            self.res.setdefault("spec", {}).setdefault("builtInAdapter", {}).update(
+                {"runtimeManagementPort": self.runtime_mgmt_port}
+            )
 
         if self.mem_buffer_bytes:
-            self.res.setdefault("spec", {}).setdefault("builtInAdapter", {}).update({
-                "memBufferBytes": self.mem_buffer_bytes
-            })
+            self.res.setdefault("spec", {}).setdefault("builtInAdapter", {}).update(
+                {"memBufferBytes": self.mem_buffer_bytes}
+            )
 
         if self.model_loading_timeout_millis:
-            self.res.setdefault("spec", {}).setdefault("builtInAdapter", {}).update({
-                "modelLoadingTimeoutMillis": self.model_loading_timeout_millis
-            })
+            self.res.setdefault("spec", {}).setdefault("builtInAdapter", {}).update(
+                {"modelLoadingTimeoutMillis": self.model_loading_timeout_millis}
+            )

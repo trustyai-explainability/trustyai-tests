@@ -2,6 +2,7 @@ from ocp_resources.resource import NamespacedResource
 
 from utils.constants import KSERVE_API_GROUP
 
+
 # TODO: Move this to openshift-python-wrapper once we are confident
 class InferenceService(NamespacedResource):
     """
@@ -61,20 +62,26 @@ class InferenceService(NamespacedResource):
         super().to_dict()
 
         if self.deployment_mode:
-            self.res.setdefault("metadata", {}).setdefault("annotations", {}).update({
-                f"{KSERVE_API_GROUP}/deploymentMode": self.deployment_mode
-            })
+            self.res.setdefault("metadata", {}).setdefault("annotations", {}).update(
+                {f"{KSERVE_API_GROUP}/deploymentMode": self.deployment_mode}
+            )
 
         if self.model_format_name:
-            self.res.setdefault("spec", {}).setdefault("predictor", {}).setdefault("model", {}).setdefault(
-                "modelFormat", {})["name"] = self.model_format_name
+            self.res.setdefault("spec", {}).setdefault("predictor", {}).setdefault(
+                "model", {}
+            ).setdefault("modelFormat", {})["name"] = self.model_format_name
 
         if self.serving_runtime:
-            self.res.setdefault("spec", {}).setdefault("predictor", {}).setdefault("model", {})["runtime"] = self.serving_runtime
+            self.res.setdefault("spec", {}).setdefault("predictor", {}).setdefault(
+                "model", {}
+            )["runtime"] = self.serving_runtime
 
         if self.storage_name:
-            self.res.setdefault("spec", {}).setdefault("predictor", {}).setdefault("model", {}).setdefault("storage",{})["key"] = self.storage_name
+            self.res.setdefault("spec", {}).setdefault("predictor", {}).setdefault(
+                "model", {}
+            ).setdefault("storage", {})["key"] = self.storage_name
 
         if self.storage_path:
-            self.res.setdefault("spec", {}).setdefault("predictor", {}).setdefault("model", {}).setdefault("storage",{})["path"] = self.storage_path
-
+            self.res.setdefault("spec", {}).setdefault("predictor", {}).setdefault(
+                "model", {}
+            ).setdefault("storage", {})["path"] = self.storage_path
