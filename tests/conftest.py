@@ -4,6 +4,7 @@ import yaml
 from kubernetes.dynamic import DynamicClient
 from ocp_resources.configmap import ConfigMap
 from ocp_resources.namespace import Namespace
+from ocp_resources.resource import get_client
 from ocp_resources.service_account import ServiceAccount
 
 from resources.inference_service import InferenceService
@@ -19,7 +20,7 @@ from utils.constants import TRUSTYAI_SERVICE, MINIO_IMAGE, OVMS_RUNTIME, OVMS, O
 
 @pytest.fixture(scope="session")
 def client():
-    yield DynamicClient(client=kubernetes.config.new_client_from_config())
+    yield get_client()
 
 
 @pytest.fixture(scope="session")

@@ -9,7 +9,8 @@ import requests
 from ocp_resources.pod import Pod
 from ocp_resources.route import Route
 
-from utils.constants import MM_PAYLOAD_PROCESSORS, INFERENCE_ENDPOINT, TRUSTYAI_SERVICE
+from utils.constants import MM_PAYLOAD_PROCESSORS, INFERENCE_ENDPOINT, TRUSTYAI_SERVICE, \
+    TRUSTYAI_MODEL_METADATA_ENDPOINT
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +28,7 @@ def wait_for_model_pods_registered(client, namespace):
         if time() - start_time > timeout:
             raise TimeoutError("Not all model pods are ready in time")
 
-        model_pods = [pod for pod in Pod.get(client=client, namespace=namespace.name)
+        model_pods = [pod for pod in Pod.get(dyn_client=client, namespace=namespace.name)
                       if "modelmesh-serving" in pod.name]
 
         pods_with_env_var = False
@@ -58,19 +59,17 @@ def get_ocp_token():
 
 
 def get_trustyai_pod(client, namespace):
-    pod = next((pod for pod in Pod.get(client=client, namespace=namespace.name) if TRUSTYAI_SERVICE in pod.name), None)
+    pod = next((pod for pod in Pod.get(dyn_client=client, namespace=namespace.name) if TRUSTYAI_SERVICE in pod.name), None)
     if pod is None:
         raise TrustyAIPodNotFoundError(f"No TrustyAI pod found in namespace {namespace.name}")
     return pod
 
 
-def get_trustyai_service_route(client, namespace):
-    return next(Route.get(client=client, namespace=namespace.name, name=TRUSTYAI_SERVICE))
+def get_trustyai_service_route(namespace):
+    return Route(namespace=namespace.name, name=TRUSTYAI_SERVICE)
 
-import time
-
-def send_data_to_inference_service(client, namespace, inference_service, data_path, max_retries=5, retry_delay=1):
-    inference_route = next(Route.get(client=client, namespace=namespace.name, name=inference_service.name))
+def send_data_to_inference_service(namespace, inference_service, data_path, max_retries=5, retry_delay=1):
+    inference_route = Route(namespace=namespace.name, name=inference_service.name)
     token = get_ocp_token()
 
     for file_name in os.listdir(data_path):
@@ -95,6 +94,30 @@ def send_data_to_inference_service(client, namespace, inference_service, data_pa
                     retry_count += 1
                     if retry_count < max_retries:
                         logger.info(f"Retrying in {retry_delay} second(s)...")
-                        time.sleep(retry_delay)
+                        sleep(retry_delay)
             else:
                 logger.error(f"Maximum retries reached for file: {file_name}")
+
+
+def get_trustyai_model_metadata(namespace):
+    return send_trustyai_service_request(namespace=namespace, endpoint=TRUSTYAI_MODEL_METADATA_ENDPOINT,
+                                         method=http.HTTPMethod.GET)
+
+
+def send_trustyai_service_request(namespace, endpoint, method, data=None):
+    trustyai_service_route = get_trustyai_service_route(namespace=namespace)
+    token = get_ocp_token()
+
+    url = f"https://{trustyai_service_route.host}{endpoint}"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    }
+
+    response = None
+    if method == http.HTTPMethod.GET:
+        response = requests.get(url=url, headers=headers, verify=False)
+    elif method == http.HTTPMethod.POST:
+        response = requests.post(url=url, headers=headers, json=data, verify=False)
+
+    return response
