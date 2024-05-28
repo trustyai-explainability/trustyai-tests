@@ -37,12 +37,57 @@ class TrustyAIModelMetadata:
         self.num_features = num_features
 
 
+def get_ocp_token():
+    token = subprocess.check_output(["oc", "whoami", "-t"]).decode().strip()
+    return token
+
+
+def get_trustyai_pod(client, namespace):
+    pod = next((pod for pod in Pod.get(dyn_client=client, namespace=namespace.name) if TRUSTYAI_SERVICE in pod.name),
+               None)
+    if pod is None:
+        raise TrustyAIPodNotFoundError(f"No TrustyAI pod found in namespace {namespace.name}")
+    return pod
+
+
+def get_trustyai_service_route(namespace):
+    try:
+        return Route(namespace=namespace.name, name=TRUSTYAI_SERVICE)
+    except kubernetes.dynamic.exceptions.NotFoundError as e:
+        raise ValueError(f"Route '{TRUSTYAI_SERVICE}' not found in namespace '{namespace.name}'") from e
+    except Exception as e:
+        raise ValueError(f"Unexpected error retrieving route '{TRUSTYAI_SERVICE}' from namespace '{namespace.name}': {str(e)}") from e
+
+
+def get_trustyai_model_metadata(namespace):
+    return send_trustyai_service_request(namespace=namespace, endpoint=TRUSTYAI_MODEL_METADATA_ENDPOINT,
+                                         method=http.HTTPMethod.GET)
+
+
+def send_trustyai_service_request(namespace, endpoint, method, data=None):
+    trustyai_service_route = get_trustyai_service_route(namespace=namespace)
+    token = get_ocp_token()
+
+    url = f"https://{trustyai_service_route.host}{endpoint}"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    }
+
+    response = None
+    if method == http.HTTPMethod.GET:
+        response = requests.get(url=url, headers=headers, verify=False)
+    elif method == http.HTTPMethod.POST:
+        response = requests.post(url=url, headers=headers, json=data, verify=False)
+
+    return response
+
+
 def verify_trustyai_model_metadata(namespace, model, data_path):
     response = get_trustyai_model_metadata(namespace=namespace)
     assert response.status_code == http.HTTPStatus.OK, f"Expected status code {http.HTTPStatus.OK}, but got {response.status_code}"
 
     model_input_data = parse_input_data(data_path)
-    logger.info(f"Number of observations: {model_input_data.num_observations}")
     model_metadata = parse_trustyai_model_metadata(response.content)
 
     assert model_metadata.model_name == model.name, f"Expected model name '{model.name}', but got '{model_metadata.model_name}'"
@@ -140,23 +185,6 @@ def wait_for_model_pods_registered(client, namespace):
             sleep(5)
 
 
-def get_ocp_token():
-    token = subprocess.check_output(["oc", "whoami", "-t"]).decode().strip()
-    return token
-
-
-def get_trustyai_pod(client, namespace):
-    pod = next((pod for pod in Pod.get(dyn_client=client, namespace=namespace.name) if TRUSTYAI_SERVICE in pod.name),
-               None)
-    if pod is None:
-        raise TrustyAIPodNotFoundError(f"No TrustyAI pod found in namespace {namespace.name}")
-    return pod
-
-
-def get_trustyai_service_route(namespace):
-    return Route(namespace=namespace.name, name=TRUSTYAI_SERVICE)
-
-
 def send_data_to_inference_service(namespace, inference_service, data_path, max_retries=5, retry_delay=1):
     inference_route = Route(namespace=namespace.name, name=inference_service.name)
     token = get_ocp_token()
@@ -186,27 +214,3 @@ def send_data_to_inference_service(namespace, inference_service, data_path, max_
                         sleep(retry_delay)
             else:
                 logger.error(f"Maximum retries reached for file: {file_name}")
-
-
-def get_trustyai_model_metadata(namespace):
-    return send_trustyai_service_request(namespace=namespace, endpoint=TRUSTYAI_MODEL_METADATA_ENDPOINT,
-                                         method=http.HTTPMethod.GET)
-
-
-def send_trustyai_service_request(namespace, endpoint, method, data=None):
-    trustyai_service_route = get_trustyai_service_route(namespace=namespace)
-    token = get_ocp_token()
-
-    url = f"https://{trustyai_service_route.host}{endpoint}"
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json"
-    }
-
-    response = None
-    if method == http.HTTPMethod.GET:
-        response = requests.get(url=url, headers=headers, verify=False)
-    elif method == http.HTTPMethod.POST:
-        response = requests.post(url=url, headers=headers, json=data, verify=False)
-
-    return response
