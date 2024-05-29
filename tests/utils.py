@@ -199,7 +199,9 @@ def wait_for_model_pods_registered(client, namespace):
     all_pods_running = False
     timeout = 60 * 3
     start_time = time()
-    while not pods_with_env_var or not all_pods_running:
+    while (
+        not pods_with_env_var or not all_pods_running
+    ):  # Consider using TimeoutSampler in the future
         if time() - start_time > timeout:
             raise TimeoutError("Not all model pods are ready in time")
 
@@ -250,9 +252,7 @@ def send_data_to_inference_service(
             headers = {"Authorization": f"Bearer {token}"}
 
             retry_count = 0
-            while (
-                retry_count < max_retries
-            ):  # Consider using TimeoutSampler in the future
+            while retry_count < max_retries:
                 try:
                     response = requests.post(
                         url=url, headers=headers, data=data, verify=False
