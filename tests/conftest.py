@@ -43,9 +43,7 @@ def model_namespace(client):
 
 @pytest.fixture(scope="session")
 def modelmesh_serviceaccount(client, model_namespace):
-    with ServiceAccount(
-        client=client, name="modelmesh-serving-sa", namespace=model_namespace.name
-    ):
+    with ServiceAccount(client=client, name="modelmesh-serving-sa", namespace=model_namespace.name):
         yield
 
 
@@ -57,7 +55,6 @@ def cluster_monitoring_config(client):
         namespace="openshift-monitoring",
         data={"config.yaml": config_yaml},
     ) as cm:
-        print(cm.data)
         yield cm
 
 
@@ -106,9 +103,7 @@ def minio_service(client, model_namespace):
 
 @pytest.fixture(scope="session")
 def minio_pod(client, model_namespace):
-    with MinioPod(
-        client=client, name="minio", namespace=model_namespace.name, image=MINIO_IMAGE
-    ) as mp:
+    with MinioPod(client=client, name="minio", namespace=model_namespace.name, image=MINIO_IMAGE) as mp:
         yield mp
 
 
