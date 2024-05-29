@@ -2,18 +2,8 @@ default_language_version:
   python: python3
 
 repos:
-  - repo: https://github.com/myint/autoflake
-    rev: "v2.3.1"
-    hooks:
-      - id: autoflake
-        args:
-          - --in-place
-          - --remove-unused-variables
-          - --remove-all-unused-imports
-        stages: [commit]
-
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.4.2
+    rev: v0.4.5
     hooks:
       - id: ruff
         stages: [commit]
