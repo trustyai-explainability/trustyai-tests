@@ -106,7 +106,9 @@ def send_trustyai_service_request(namespace, endpoint, method, data=None):
     return response
 
 
-def verify_trustyai_model_metadata(namespace, model, data_path):
+def verify_trustyai_model_metadata(
+    namespace, model, data_path, expected_percentage_observations
+):
     response = get_trustyai_model_metadata(namespace=namespace)
     assert (
         response.status_code == http.HTTPStatus.OK
@@ -122,7 +124,6 @@ def verify_trustyai_model_metadata(namespace, model, data_path):
         model_metadata.input_tensor_name == model_input_data.name
     ), f"Expected input tensor name '{model_input_data}', but got '{model_metadata.input_tensor_name}'"
 
-    expected_percentage_observations = 0.5
     assert (
         model_metadata.num_observations
         > model_input_data.num_observations * expected_percentage_observations
@@ -249,7 +250,9 @@ def send_data_to_inference_service(
             headers = {"Authorization": f"Bearer {token}"}
 
             retry_count = 0
-            while retry_count < max_retries:
+            while (
+                retry_count < max_retries
+            ):  # Consider using TimeoutSampler in the future
                 try:
                     response = requests.post(
                         url=url, headers=headers, data=data, verify=False

@@ -6,10 +6,10 @@ logger = logging.getLogger(__name__)
 
 
 class TestBiasMetrics:
-    def test_get_loan_model_metadata(
+    def test_loan_model_metadata(
         self, model_namespace, trustyai_service, onnx_loan_model_alpha
     ):
-        input_data_path = "./model_data/bias_loan"
+        input_data_path = f"./model_data/{onnx_loan_model_alpha.name}"
         send_data_to_inference_service(
             inference_service=onnx_loan_model_alpha,
             namespace=model_namespace,
@@ -20,4 +20,7 @@ class TestBiasMetrics:
             namespace=model_namespace,
             model=onnx_loan_model_alpha,
             data_path=input_data_path,
+            expected_percentage_observations=0.5,
         )
+
+    # TODO: Add tests for the rest of the bias metrics
