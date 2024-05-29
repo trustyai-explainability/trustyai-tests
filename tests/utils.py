@@ -10,7 +10,7 @@ import requests
 from ocp_resources.pod import Pod
 from ocp_resources.route import Route
 
-from utils.constants import (
+from utilities.constants import (
     MM_PAYLOAD_PROCESSORS,
     INFERENCE_ENDPOINT,
     TRUSTYAI_SERVICE,

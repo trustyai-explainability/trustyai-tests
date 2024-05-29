@@ -12,7 +12,7 @@ from resources.storage.minio_secret import MinioSecret
 from resources.storage.minio_service import MinioService
 from resources.trustyai_service import TrustyAIService
 from tests.utils import wait_for_model_pods_registered
-from utils.constants import (
+from utilities.constants import (
     TRUSTYAI_SERVICE,
     MINIO_IMAGE,
     OVMS_RUNTIME,
