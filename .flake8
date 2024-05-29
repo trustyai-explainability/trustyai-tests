@@ -9,8 +9,6 @@ exclude =
     .git,
     .yml,
     Pipfile.*,
-    ansible/*,
-    docs/*,
     .cache/*
 
 fcn_exclude_functions =
