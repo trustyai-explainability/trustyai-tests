@@ -22,18 +22,12 @@ class TrustyAIService(NamespacedResource):
         data_filename=None,
         data_format=None,
         metrics_schedule_interval=None,
-        name=None,
-        namespace=None,
-        yaml_file=None,
-        client=None,
         **kwargs,
     ):
         """
         TrustyAIService object
 
         Args:
-            name (str):  TrustyAIService name.
-            namespace (str): TrustyAIService namespace.
             replicas (int, default: 1): Number of replicas for the TrustyAIService.
             image (str): Pull url of the TrustyAIService.
             tag (str): Tag of the image.
@@ -43,12 +37,8 @@ class TrustyAIService(NamespacedResource):
             data_filename (str): File where the TrustyAIService data is stored.
             data_format (str): Format of the file where the TrustyAIService data is stored.
             metrics_schedule_interval (str): Time interval in seconds for TrustyAIService metrics.
-            yaml_file (yaml): yaml file for the resource.
-            client (DynamicClient): DynamicClient to use.
         """
-        super().__init__(
-            name=name, namespace=namespace, yaml_file=yaml_file, client=client, **kwargs
-        )
+        super().__init__(**kwargs)
         self.replicas = replicas
         self.image = image
         self.tag = tag
@@ -62,36 +52,27 @@ class TrustyAIService(NamespacedResource):
     def to_dict(self):
         super().to_dict()
 
-        self.res.setdefault("spec", {})["replicas"] = self.replicas
-        self.res.setdefault("spec", {})["image"] = self.image
-        self.res.setdefault("spec", {})["tag"] = self.tag
+        self.res["spec"] = {}
+        _spec = self.res["spec"]
+
+        _spec["replicas"] = self.replicas
+        _spec["image"] = self.image
+        _spec["tag"] = self.tag
 
         if self.storage_format:
-            self.res.setdefault("spec", {}).setdefault("storage", {})["format"] = (
-                self.storage_format
-            )
+            _spec.setdefault("storage", {})["format"] = self.storage_format
 
         if self.storage_folder:
-            self.res.setdefault("spec", {}).setdefault("storage", {})["folder"] = (
-                self.storage_folder
-            )
+            _spec.setdefault("storage", {})["folder"] = self.storage_folder
 
         if self.storage_size:
-            self.res.setdefault("spec", {}).setdefault("storage", {})["size"] = (
-                self.storage_size
-            )
+            _spec.setdefault("storage", {})["size"] = self.storage_size
 
         if self.data_filename:
-            self.res.setdefault("spec", {}).setdefault("data", {})["filename"] = (
-                self.data_filename
-            )
+            _spec.setdefault("data", {})["filename"] = self.data_filename
 
         if self.data_format:
-            self.res.setdefault("spec", {}).setdefault("data", {})["format"] = (
-                self.data_format
-            )
+            _spec.setdefault("data", {})["format"] = self.data_format
 
         if self.metrics_schedule_interval:
-            self.res.setdefault("spec", {}).setdefault("metrics", {})["schedule"] = (
-                self.metrics_schedule_interval
-            )
+            _spec.setdefault("metrics", {})["schedule"] = self.metrics_schedule_interval

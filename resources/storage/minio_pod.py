@@ -4,13 +4,10 @@ from ocp_resources.pod import Pod
 class MinioPod(Pod):
     def __init__(
         self,
-        name,
-        namespace,
         image,
-        client,
         **kwargs,
     ):
-        super().__init__(name=name, namespace=namespace, client=client, **kwargs)
+        super().__init__(**kwargs)
         self.image = image
 
     def to_dict(self):
