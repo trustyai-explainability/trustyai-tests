@@ -1,8 +1,4 @@
-import logging
-
 from tests.utils import send_data_to_inference_service, verify_trustyai_model_metadata
-
-logger = logging.getLogger(__name__)
 
 
 class TestBiasMetrics:
