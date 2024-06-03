@@ -83,7 +83,7 @@ def send_trustyai_service_request(namespace, endpoint, method, data=None):
         return requests.get(url=url, headers=headers, verify=False)
     elif method == http.HTTPMethod.POST:
         return requests.post(url=url, headers=headers, json=data, verify=False)
-    return ValueError(f"Unsupported HTTP method: {method}")
+    raise ValueError(f"Unsupported HTTP method: {method}")
 
 
 def verify_trustyai_model_metadata(namespace, model, data_path, expected_percentage_observations):
