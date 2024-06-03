@@ -34,7 +34,6 @@ def model_namespace(client):
         client=client,
         name="test-namespace",
         label={"modelmesh-enabled": "true"},
-        teardown=True,
         delete_timeout=600,
     ) as ns:
         ns.wait_for_status(status=Namespace.Status.ACTIVE, timeout=120)

@@ -61,10 +61,7 @@ def get_trustyai_pod(client, namespace):
 
 
 def get_trustyai_service_route(namespace):
-    route = Route(namespace=namespace.name, name=TRUSTYAI_SERVICE)
-    if not route.exists:
-        raise ValueError(f"Unexpected error retrieving route '{TRUSTYAI_SERVICE}' from namespace '{namespace.name}")
-    return route
+    return Route(namespace=namespace.name, name=TRUSTYAI_SERVICE, ensure_exists=True)
 
 
 def get_trustyai_model_metadata(namespace):
@@ -82,14 +79,11 @@ def send_trustyai_service_request(namespace, endpoint, method, data=None):
     url = f"https://{trustyai_service_route.host}{endpoint}"
     headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
 
-    response = None
     if method == http.HTTPMethod.GET:
-        response = requests.get(url=url, headers=headers, verify=False)
+        return requests.get(url=url, headers=headers, verify=False)
     elif method == http.HTTPMethod.POST:
-        response = requests.post(url=url, headers=headers, json=data, verify=False)
-    else:
-        raise ValueError(f"Unsupported HTTP method: {method}")
-    return response
+        return requests.post(url=url, headers=headers, json=data, verify=False)
+    return ValueError(f"Unsupported HTTP method: {method}")
 
 
 def verify_trustyai_model_metadata(namespace, model, data_path, expected_percentage_observations):
