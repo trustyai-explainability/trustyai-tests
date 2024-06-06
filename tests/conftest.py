@@ -5,21 +5,13 @@ from ocp_resources.namespace import Namespace
 from ocp_resources.resource import get_client
 from ocp_resources.service_account import ServiceAccount
 
-from resources.inference_service import InferenceService
-from resources.serving_runtime import ServingRuntime
 from resources.storage.minio_pod import MinioPod
 from resources.storage.minio_secret import MinioSecret
 from resources.storage.minio_service import MinioService
 from resources.trustyai_service import TrustyAIService
-from tests.utils import wait_for_model_pods_registered
 from utilities.constants import (
     TRUSTYAI_SERVICE,
     MINIO_IMAGE,
-    OVMS_RUNTIME,
-    OVMS,
-    OPENVINO_MODEL_FORMAT,
-    ONNX,
-    OVMS_QUAY_IMAGE,
 )
 
 
@@ -124,67 +116,4 @@ def minio_secret(client, model_namespace):
 
 @pytest.fixture(scope="session")
 def minio_data_connection(minio_service, minio_pod, minio_secret):
-    yield
-
-
-@pytest.fixture(scope="class")
-def ovms_runtime(client, minio_data_connection, model_namespace):
-    supported_model_formats = [
-        {"name": OPENVINO_MODEL_FORMAT, "version": "opset1", "autoSelect": True},
-        {"name": ONNX, "version": "1"},
-    ]
-    containers = [
-        {
-            "name": OVMS,
-            "image": OVMS_QUAY_IMAGE,
-            "args": [
-                "--port=8001",
-                "--rest_port=8888",
-                "--config_path=/models/model_config_list.json",
-                "--file_system_poll_wait_seconds=0",
-                "--grpc_bind_address=127.0.0.1",
-                "--rest_bind_address=127.0.0.1",
-            ],
-            "resources": {
-                "requests": {"cpu": "500m", "memory": "1Gi"},
-                "limits": {"cpu": "5", "memory": "1Gi"},
-            },
-        }
-    ]
-
-    with ServingRuntime(
-        client=client,
-        name=OVMS_RUNTIME,
-        namespace=model_namespace.name,
-        supported_model_formats=supported_model_formats,
-        protocol_versions="grpc-v1",
-        multi_model=True,
-        containers=containers,
-        grpc_endpoint=8085,
-        grpc_data_endpoint=8001,
-        server_type=OVMS,
-        runtime_mgmt_port=8888,
-        mem_buffer_bytes=134217728,
-        model_loading_timeout_millis=90000,
-        enable_route=True,
-        label={
-            "name": "modelmesh-serving-ovms-1.x-SR",
-        },
-    ) as ovms:
-        yield ovms
-
-
-@pytest.fixture(scope="class")
-def onnx_loan_model_alpha(client, model_namespace, ovms_runtime):
-    with InferenceService(
-        client=client,
-        name="demo-loan-nn-onnx-alpha",
-        namespace=model_namespace.name,
-        storage_name="aws-connection-minio-data-connection",
-        storage_path="onnx/loan_model_alpha_august.onnx",
-        model_format_name=ONNX,
-        serving_runtime=OVMS_RUNTIME,
-        deployment_mode=InferenceService.DeploymentMode.MODEL_MESH,
-    ) as inference_service:
-        wait_for_model_pods_registered(client=client, namespace=model_namespace)
-        yield inference_service
+    yield minio_secret

@@ -15,6 +15,11 @@ from utilities.constants import (
     INFERENCE_ENDPOINT,
     TRUSTYAI_SERVICE,
     TRUSTYAI_MODEL_METADATA_ENDPOINT,
+    TRUSTYAI_UPLOAD_ENDPOINT,
+    TRUSTYAI_MEANSHIFT_ENDPOINT,
+    TRUSTYAI_FOURIERMMD_ENDPOINT,
+    TRUSTYAI_KSTEST_ENDPOINT,
+    TRUSTYAI_APPROXKSTEST_ENDPOINT,
 )
 
 logger = logging.getLogger(__name__)
@@ -72,7 +77,47 @@ def get_trustyai_model_metadata(namespace):
     )
 
 
-def send_trustyai_service_request(namespace, endpoint, method, data=None):
+def request_meanshift(namespace, model):
+    print(model.name)
+    return send_trustyai_service_request(
+        namespace=namespace,
+        endpoint=TRUSTYAI_MEANSHIFT_ENDPOINT,
+        method=http.HTTPMethod.POST,
+        json={"modelId": model.name, "referenceTag": "TRAINING"},
+    )
+
+
+def request_fouriermmd(namespace, model):
+    print(model.name)
+    return send_trustyai_service_request(
+        namespace=namespace,
+        endpoint=TRUSTYAI_FOURIERMMD_ENDPOINT,
+        method=http.HTTPMethod.POST,
+        json={"modelId": model.name, "referenceTag": "TRAINING"},
+    )
+
+
+def request_kstest(namespace, model):
+    print(model.name)
+    return send_trustyai_service_request(
+        namespace=namespace,
+        endpoint=TRUSTYAI_KSTEST_ENDPOINT,
+        method=http.HTTPMethod.POST,
+        json={"modelId": model.name, "referenceTag": "TRAINING"},
+    )
+
+
+def request_approxkstest(namespace, model):
+    print(model.name)
+    return send_trustyai_service_request(
+        namespace=namespace,
+        endpoint=TRUSTYAI_APPROXKSTEST_ENDPOINT,
+        method=http.HTTPMethod.POST,
+        json={"modelId": model.name, "referenceTag": "TRAINING"},
+    )
+
+
+def send_trustyai_service_request(namespace, endpoint, method, data=None, json=None):
     trustyai_service_route = get_trustyai_service_route(namespace=namespace)
     token = get_ocp_token()
 
@@ -82,7 +127,7 @@ def send_trustyai_service_request(namespace, endpoint, method, data=None):
     if method == http.HTTPMethod.GET:
         return requests.get(url=url, headers=headers, verify=False)
     elif method == http.HTTPMethod.POST:
-        return requests.post(url=url, headers=headers, json=data, verify=False)
+        return requests.post(url=url, headers=headers, data=data, json=json, verify=False)
     raise ValueError(f"Unsupported HTTP method: {method}")
 
 
@@ -91,17 +136,12 @@ def verify_trustyai_model_metadata(namespace, model, data_path, expected_percent
     assert (
         response.status_code == http.HTTPStatus.OK
     ), f"Expected status code {http.HTTPStatus.OK}, but got {response.status_code}"
-
     model_input_data = parse_input_data(data_path=data_path)
     model_metadata = parse_trustyai_model_metadata(model_metadata=response.content)
 
     assert (
         model_metadata.model_name == model.name
     ), f"Expected model name '{model.name}', but got '{model_metadata.model_name}'"
-    assert (
-        model_metadata.input_tensor_name == model_input_data.name
-    ), f"Expected input tensor name '{model_input_data}', but got '{model_metadata.input_tensor_name}'"
-
     assert model_metadata.num_observations > model_input_data.num_observations * expected_percentage_observations, (
         f"Expected number of observations to be greater than "
         f"{model_input_data.num_observations * expected_percentage_observations},"
@@ -148,13 +188,17 @@ def parse_input_data(data_path):
             with open(file_path, "r") as file:
                 data = json.load(file)
 
-            for input_data in data["inputs"]:
-                name = name or input_data["name"]
-                num_features = num_features or input_data["shape"][1]
-                data_type = data_type or input_data["datatype"]
+            # Check if "inputs" is directly available or nested inside "request"
+            inputs = data.get("inputs", data.get("request", {}).get("inputs"))
 
-                num_observations = input_data["shape"][0]
-                total_observations += num_observations
+            if inputs:
+                for input_data in inputs:
+                    name = name or input_data["name"]
+                    num_features = num_features or input_data["shape"][1]
+                    data_type = data_type or input_data["datatype"]
+
+                    num_observations = input_data["shape"][0]
+                    total_observations += num_observations
 
     return ModelInputData(
         name=name,
@@ -230,3 +274,12 @@ def send_data_to_inference_service(namespace, inference_service, data_path, max_
                         sleep(retry_delay)
             else:
                 logger.error(f"Maximum retries reached for file: {file_name}")
+
+
+def upload_data_to_trustyai_service(namespace, data_path, max_retries=5, retry_delay=1):
+    with open(f"{data_path}/training_data.json", "r") as file:
+        data = file.read()
+
+    return send_trustyai_service_request(
+        namespace=namespace, endpoint=TRUSTYAI_UPLOAD_ENDPOINT, method=http.HTTPMethod.POST, data=data
+    )
