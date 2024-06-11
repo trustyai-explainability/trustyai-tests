@@ -15,11 +15,6 @@ from utilities.constants import (
     INFERENCE_ENDPOINT,
     TRUSTYAI_SERVICE,
     TRUSTYAI_MODEL_METADATA_ENDPOINT,
-    TRUSTYAI_UPLOAD_ENDPOINT,
-    TRUSTYAI_MEANSHIFT_ENDPOINT,
-    TRUSTYAI_FOURIERMMD_ENDPOINT,
-    TRUSTYAI_KSTEST_ENDPOINT,
-    TRUSTYAI_APPROXKSTEST_ENDPOINT,
 )
 
 logger = logging.getLogger(__name__)
@@ -74,46 +69,6 @@ def get_trustyai_model_metadata(namespace):
         namespace=namespace,
         endpoint=TRUSTYAI_MODEL_METADATA_ENDPOINT,
         method=http.HTTPMethod.GET,
-    )
-
-
-def request_meanshift(namespace, model):
-    print(model.name)
-    return send_trustyai_service_request(
-        namespace=namespace,
-        endpoint=TRUSTYAI_MEANSHIFT_ENDPOINT,
-        method=http.HTTPMethod.POST,
-        json={"modelId": model.name, "referenceTag": "TRAINING"},
-    )
-
-
-def request_fouriermmd(namespace, model):
-    print(model.name)
-    return send_trustyai_service_request(
-        namespace=namespace,
-        endpoint=TRUSTYAI_FOURIERMMD_ENDPOINT,
-        method=http.HTTPMethod.POST,
-        json={"modelId": model.name, "referenceTag": "TRAINING"},
-    )
-
-
-def request_kstest(namespace, model):
-    print(model.name)
-    return send_trustyai_service_request(
-        namespace=namespace,
-        endpoint=TRUSTYAI_KSTEST_ENDPOINT,
-        method=http.HTTPMethod.POST,
-        json={"modelId": model.name, "referenceTag": "TRAINING"},
-    )
-
-
-def request_approxkstest(namespace, model):
-    print(model.name)
-    return send_trustyai_service_request(
-        namespace=namespace,
-        endpoint=TRUSTYAI_APPROXKSTEST_ENDPOINT,
-        method=http.HTTPMethod.POST,
-        json={"modelId": model.name, "referenceTag": "TRAINING"},
     )
 
 
@@ -274,12 +229,3 @@ def send_data_to_inference_service(namespace, inference_service, data_path, max_
                         sleep(retry_delay)
             else:
                 logger.error(f"Maximum retries reached for file: {file_name}")
-
-
-def upload_data_to_trustyai_service(namespace, data_path, max_retries=5, retry_delay=1):
-    with open(f"{data_path}/training_data.json", "r") as file:
-        data = file.read()
-
-    return send_trustyai_service_request(
-        namespace=namespace, endpoint=TRUSTYAI_UPLOAD_ENDPOINT, method=http.HTTPMethod.POST, data=data
-    )
