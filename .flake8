@@ -1,0 +1,54 @@
+[flake8]
+# UFN plugin must be run in serial
+jobs = 0
+
+max-line-length = 120
+exclude =
+    doc,
+    .tox,
+    .git,
+    .yml,
+    Pipfile.*,
+    .cache/*
+
+fcn_exclude_functions =
+    group,
+    os,
+    parser,
+    urllib,
+    shutil,
+    LOGGER,
+    BASIC_LOGGER,
+    get_plugin,
+    findall,
+    record_testsuite_property,
+    time,
+    sh,
+    json,
+    yaml,
+    subprocess,
+    request,
+    logging,
+    add_option,
+    pytest,
+    write,
+    send,
+    parametrize,
+    sleep,
+    datetime,
+    random,
+    pytestconfig,
+    addoption,
+    getoption,
+    io,
+    requests,
+
+nit_exclude_imports =
+    os_params,
+    upgrade_params,
+
+
+enable-extensions =
+    FCN,
+    UFN,
+    NIC,

@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "trustyai-tests"
+version = "0.1.0"
+description = ""
+authors = ["aaguirre <aaguirre@redhat.com>"]
+readme = "README.md"
+packages = [{include = "trustyai_tests"}]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+openshift-python-wrapper = "^10.0.53"
+kubernetes = "^29.0.0"
+pyyaml = "^6.0.1"
+pytest = "^8.2.1"
+
+[tool.ruff]
+preview = true
+line-length = 120
+fix = true
+output-format = "grouped"
+
+[tool.ruff.format]
+exclude = [".git", ".venv", ".mypy_cache", ".tox", "__pycache__"]
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^3.7.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

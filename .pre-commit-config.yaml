@@ -1,0 +1,51 @@
+default_language_version:
+  python: python3
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.4.5
+    hooks:
+      - id: ruff
+        stages: [commit]
+      - id: ruff-format
+        stages: [commit]
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: "v4.6.0"
+    hooks:
+      - id: check-merge-conflict
+        stages: [commit]
+      - id: debug-statements
+        stages: [commit]
+      - id: trailing-whitespace
+        stages: [commit]
+      - id: end-of-file-fixer
+        stages: [commit]
+      - id: check-ast
+        stages: [commit]
+      - id: check-builtin-literals
+        stages: [commit]
+
+  - repo: https://github.com/PyCQA/flake8
+    rev: "7.0.0"
+    hooks:
+      - id: flake8
+        args: [--config=.flake8]
+        additional_dependencies:
+          [
+            "git+https://github.com/RedHatQE/flake8-plugins.git@v0.0.2",
+            "flake8-mutable",
+            "pep8-naming",
+          ]
+        stages: [commit]
+
+  - repo: https://github.com/jorisroovers/gitlint
+    rev: "v0.19.1"
+    hooks:
+      - id: gitlint
+        stages: [commit-msg]
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: "v8.18.2"
+    hooks:
+      - id: gitleaks
