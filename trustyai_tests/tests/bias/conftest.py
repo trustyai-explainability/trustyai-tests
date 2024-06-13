@@ -3,14 +3,14 @@ import pytest
 from trustyai_tests.resources.inference_service import InferenceService
 from trustyai_tests.resources.serving_runtime import ServingRuntime
 from trustyai_tests.tests.utils import wait_for_model_pods_registered
-from trustyai_tests.utilities.constants import (
-    ONNX,
-    OVMS,
+from trustyai_tests.constants import (
     OPENVINO_MODEL_FORMAT,
-    OVMS_QUAY_IMAGE,
-    GRPC,
-    OVMS_RUNTIME_NAME,
 )
+
+ONNX = "onnx"
+OVMS = "ovms"
+OVMS_RUNTIME_NAME = f"{OVMS}-1.x"
+OVMS_QUAY_IMAGE = "quay.io/opendatahub/openvino_model_server:stable"
 
 
 @pytest.fixture(scope="class")
@@ -43,7 +43,7 @@ def ovms_runtime(client, minio_data_connection, model_namespace):
         name=OVMS_RUNTIME_NAME,
         namespace=model_namespace.name,
         supported_model_formats=supported_model_formats,
-        protocol_versions=f"{GRPC}-v1",
+        protocol_versions="grpc-v1",
         multi_model=True,
         containers=containers,
         grpc_endpoint=8085,

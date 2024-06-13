@@ -9,9 +9,8 @@ from trustyai_tests.resources.storage.minio_pod import MinioPod
 from trustyai_tests.resources.storage.minio_secret import MinioSecret
 from trustyai_tests.resources.storage.minio_service import MinioService
 from trustyai_tests.resources.trustyai_service import TrustyAIService
-from trustyai_tests.utilities.constants import (
+from trustyai_tests.constants import (
     TRUSTYAI_SERVICE,
-    MINIO_IMAGE,
 )
 
 
@@ -94,7 +93,12 @@ def minio_service(client, model_namespace):
 
 @pytest.fixture(scope="class")
 def minio_pod(client, model_namespace):
-    with MinioPod(client=client, name="minio", namespace=model_namespace.name, image=MINIO_IMAGE) as mp:
+    with MinioPod(
+        client=client,
+        name="minio",
+        namespace=model_namespace.name,
+        image="quay.io/trustyai/modelmesh-minio-examples:gauss",
+    ) as mp:
         yield mp
 
 

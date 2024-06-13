@@ -11,12 +11,8 @@ from ocp_resources.pod import Pod
 from ocp_resources.route import Route
 from ocp_utilities.monitoring import Prometheus
 
-from trustyai_tests.utilities.constants import (
-    MM_PAYLOAD_PROCESSORS,
-    INFERENCE_ENDPOINT,
+from trustyai_tests.constants import (
     TRUSTYAI_SERVICE,
-    TRUSTYAI_MODEL_METADATA_ENDPOINT,
-    TRUSTYAI_UPLOAD_ENDPOINT,
 )
 
 logger = logging.getLogger(__name__)
@@ -69,7 +65,7 @@ def get_trustyai_service_route(namespace):
 def get_trustyai_model_metadata(namespace):
     return send_trustyai_service_request(
         namespace=namespace,
-        endpoint=TRUSTYAI_MODEL_METADATA_ENDPOINT,
+        endpoint="/info",
         method=http.HTTPMethod.GET,
     )
 
@@ -185,7 +181,7 @@ def wait_for_model_pods_registered(client, namespace):
             try:
                 has_env_var = False
                 for container in pod.instance.spec.containers:
-                    if container.env is not None and any(env.name == MM_PAYLOAD_PROCESSORS for env in container.env):
+                    if container.env is not None and any(env.name == "MM_PAYLOAD_PROCESSORS" for env in container.env):
                         has_env_var = True
                         break
 
@@ -212,7 +208,7 @@ def send_data_to_inference_service(namespace, inference_service, data_path, max_
             with open(file_path, "r") as file:
                 data = file.read()
 
-            url = f"https://{inference_route.host}{inference_route.instance.spec.path}{INFERENCE_ENDPOINT}"
+            url = f"https://{inference_route.host}{inference_route.instance.spec.path}/infer"
             headers = {"Authorization": f"Bearer {token}"}
 
             retry_count = 0
@@ -239,7 +235,7 @@ def upload_data_to_trustyai_service(namespace, data_path):
 
     logger.info(msg="Uploading data to TrustyAI Service.")
     return send_trustyai_service_request(
-        namespace=namespace, endpoint=TRUSTYAI_UPLOAD_ENDPOINT, method=http.HTTPMethod.POST, data=data
+        namespace=namespace, endpoint="/data/upload", method=http.HTTPMethod.POST, data=data
     )
 
 

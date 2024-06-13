@@ -1,5 +1,5 @@
 import http
-
+from trustyai_tests.tests.drift.utils import get_drift_metric_endpoint, DriftMetrics
 from trustyai_tests.tests.utils import (
     verify_trustyai_model_metadata,
     send_data_to_inference_service,
@@ -8,20 +8,8 @@ from trustyai_tests.tests.utils import (
     verify_metric_scheduling,
     upload_data_to_trustyai_service,
 )
-from trustyai_tests.utilities.constants import (
-    TRUSTYAI_MEANSHIFT_ENDPOINT,
-    TRUSTYAI_MEANSHIFT,
-    TRUSTYAI_FOURIERMMD,
-    TRUSTYAI_KSTEST,
-    TRUSTYAI_APPROXKSTEST,
+from trustyai_tests.constants import (
     MODEL_DATA_PATH,
-    TRUSTYAI_MEANSHIFT_SCHEDULE_ENDPOINT,
-    TRUSTYAI_FOURIERMMD_ENDPOINT,
-    TRUSTYAI_FOURIERMMD_SCHEDULE_ENDPOINT,
-    TRUSTYAI_KSTEST_ENDPOINT,
-    TRUSTYAI_KSTEST_SCHEDULE_ENDPOINT,
-    TRUSTYAI_APPROXKSTEST_ENDPOINT,
-    TRUSTYAI_APPROXKSTEST_SCHEDULE_ENDPOINT,
 )
 
 
@@ -64,94 +52,95 @@ class TestDriftMetrics:
         verify_metric_request(
             namespace=model_namespace,
             model=gaussian_credit_model,
-            endpoint=TRUSTYAI_MEANSHIFT_ENDPOINT,
-            expected_metric_name=TRUSTYAI_MEANSHIFT.upper(),
+            endpoint=get_drift_metric_endpoint(metric=DriftMetrics.TRUSTYAI_MEANSHIFT.value),
+            expected_metric_name=DriftMetrics.TRUSTYAI_MEANSHIFT.value.upper(),
         )
 
     def test_schedule_meanshift(self, model_namespace, trustyai_service, gaussian_credit_model):
         verify_metric_scheduling(
             namespace=model_namespace,
             model=gaussian_credit_model,
-            endpoint=TRUSTYAI_MEANSHIFT_SCHEDULE_ENDPOINT,
-            expected_metric_name=TRUSTYAI_MEANSHIFT.upper(),
+            endpoint=get_drift_metric_endpoint(metric=DriftMetrics.TRUSTYAI_MEANSHIFT.value, schedule=True),
+            expected_metric_name=DriftMetrics.TRUSTYAI_MEANSHIFT.value.upper(),
         )
 
     def test_meanshift_prometheus_query(self, model_namespace, gaussian_credit_model):
         verify_trustyai_metric_prometheus(
             namespace=model_namespace,
             model=gaussian_credit_model,
-            prometheus_query=f'trustyai_{TRUSTYAI_MEANSHIFT.lower()}{{namespace="{model_namespace.name}"}}',
-            metric_name=TRUSTYAI_MEANSHIFT,
+            prometheus_query=f'trustyai_{DriftMetrics.TRUSTYAI_MEANSHIFT.value}{{namespace="{model_namespace.name}"}}',
+            metric_name=DriftMetrics.TRUSTYAI_MEANSHIFT.value,
         )
 
     def test_request_fouriermmd(self, model_namespace, trustyai_service, gaussian_credit_model):
         verify_metric_request(
             namespace=model_namespace,
             model=gaussian_credit_model,
-            endpoint=TRUSTYAI_FOURIERMMD_ENDPOINT,
-            expected_metric_name=TRUSTYAI_FOURIERMMD.upper(),
+            endpoint=get_drift_metric_endpoint(metric=DriftMetrics.TRUSTYAI_FOURIERMMD.value),
+            expected_metric_name=DriftMetrics.TRUSTYAI_FOURIERMMD.value.upper(),
         )
 
     def test_schedule_fouriermmd(self, model_namespace, trustyai_service, gaussian_credit_model):
         verify_metric_scheduling(
             namespace=model_namespace,
             model=gaussian_credit_model,
-            endpoint=TRUSTYAI_FOURIERMMD_SCHEDULE_ENDPOINT,
-            expected_metric_name=TRUSTYAI_FOURIERMMD.upper(),
+            endpoint=get_drift_metric_endpoint(metric=DriftMetrics.TRUSTYAI_FOURIERMMD.value, schedule=True),
+            expected_metric_name=DriftMetrics.TRUSTYAI_FOURIERMMD.value.upper(),
         )
 
     def test_fouriermmd_prometheus_query(self, model_namespace, gaussian_credit_model):
         verify_trustyai_metric_prometheus(
             namespace=model_namespace,
             model=gaussian_credit_model,
-            prometheus_query=f'trustyai_{TRUSTYAI_FOURIERMMD.lower()}{{namespace="{model_namespace.name}"}}',
-            metric_name=TRUSTYAI_FOURIERMMD,
+            prometheus_query=f'trustyai_{DriftMetrics.TRUSTYAI_FOURIERMMD.value}{{namespace="{model_namespace.name}"}}',
+            metric_name=DriftMetrics.TRUSTYAI_FOURIERMMD.value,
         )
 
     def test_request_kstest(self, model_namespace, trustyai_service, gaussian_credit_model):
         verify_metric_request(
             namespace=model_namespace,
             model=gaussian_credit_model,
-            endpoint=TRUSTYAI_KSTEST_ENDPOINT,
-            expected_metric_name=TRUSTYAI_KSTEST.upper(),
+            endpoint=get_drift_metric_endpoint(metric=DriftMetrics.TRUSTYAI_KSTEST.value),
+            expected_metric_name=DriftMetrics.TRUSTYAI_KSTEST.value.upper(),
         )
 
     def test_schedule_kstest_scheduling_request(self, model_namespace, trustyai_service, gaussian_credit_model):
         verify_metric_scheduling(
             namespace=model_namespace,
             model=gaussian_credit_model,
-            endpoint=TRUSTYAI_KSTEST_SCHEDULE_ENDPOINT,
-            expected_metric_name=TRUSTYAI_KSTEST.upper(),
+            endpoint=get_drift_metric_endpoint(metric=DriftMetrics.TRUSTYAI_KSTEST.value, schedule=True),
+            expected_metric_name=DriftMetrics.TRUSTYAI_KSTEST.value.upper(),
         )
 
     def test_kstest_prometheus_query(self, model_namespace, gaussian_credit_model):
         verify_trustyai_metric_prometheus(
             namespace=model_namespace,
             model=gaussian_credit_model,
-            prometheus_query=f'trustyai_{TRUSTYAI_KSTEST.lower()}{{namespace="{model_namespace.name}"}}',
-            metric_name=TRUSTYAI_KSTEST,
+            prometheus_query=f'trustyai_{DriftMetrics.TRUSTYAI_KSTEST.value}{{namespace="{model_namespace.name}"}}',
+            metric_name=DriftMetrics.TRUSTYAI_KSTEST.value,
         )
 
     def test_request_approxkstest(self, model_namespace, trustyai_service, gaussian_credit_model):
         verify_metric_request(
             namespace=model_namespace,
             model=gaussian_credit_model,
-            endpoint=TRUSTYAI_APPROXKSTEST_ENDPOINT,
-            expected_metric_name=TRUSTYAI_APPROXKSTEST.upper(),
+            endpoint=get_drift_metric_endpoint(metric=DriftMetrics.TRUSTYAI_APPROXKSTEST.value),
+            expected_metric_name=DriftMetrics.TRUSTYAI_APPROXKSTEST.value.upper(),
         )
 
     def test_schedule_approxkstest(self, model_namespace, trustyai_service, gaussian_credit_model):
         verify_metric_scheduling(
             namespace=model_namespace,
             model=gaussian_credit_model,
-            endpoint=TRUSTYAI_APPROXKSTEST_SCHEDULE_ENDPOINT,
-            expected_metric_name=TRUSTYAI_APPROXKSTEST.upper(),
+            endpoint=get_drift_metric_endpoint(metric=DriftMetrics.TRUSTYAI_APPROXKSTEST.value, schedule=True),
+            expected_metric_name=DriftMetrics.TRUSTYAI_APPROXKSTEST.value.upper(),
         )
 
     def test_approxkstest_prometheus_query(self, model_namespace, gaussian_credit_model):
         verify_trustyai_metric_prometheus(
             namespace=model_namespace,
             model=gaussian_credit_model,
-            prometheus_query=f'trustyai_{TRUSTYAI_APPROXKSTEST.lower()}{{namespace="{model_namespace.name}"}}',
-            metric_name=TRUSTYAI_APPROXKSTEST,
+            prometheus_query=f"trustyai_{DriftMetrics.TRUSTYAI_APPROXKSTEST.value}"
+            f'{{namespace="{model_namespace.name}"}}',
+            metric_name=DriftMetrics.TRUSTYAI_APPROXKSTEST.value,
         )

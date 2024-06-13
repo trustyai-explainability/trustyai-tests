@@ -3,14 +3,12 @@ import pytest
 from trustyai_tests.resources.inference_service import InferenceService
 from trustyai_tests.resources.serving_runtime import ServingRuntime
 from trustyai_tests.tests.utils import wait_for_model_pods_registered
-from trustyai_tests.utilities.constants import (
-    GRPC,
-    MLSERVER,
-    MLSERVER_RUNTIME_NAME,
-    MLSERVER_QUAY_IMAGE,
-    SKLEARN,
-    XGBOOST,
-)
+
+SKLEARN = "sklearn"
+XGBOOST = "xgboost"
+MLSERVER = "mlserver"
+MLSERVER_RUNTIME_NAME = f"{MLSERVER}-1.x"
+MLSERVER_QUAY_IMAGE = "quay.io/aaguirre/mlserver:1.3.2"  # TODO: Change it to TrustyAI specific quay
 
 
 @pytest.fixture(scope="class")
@@ -42,7 +40,7 @@ def mlserver_runtime(client, minio_data_connection, model_namespace):
         name=MLSERVER_RUNTIME_NAME,
         namespace=model_namespace.name,
         supported_model_formats=supported_model_formats,
-        protocol_versions=f"{GRPC}-v2",
+        protocol_versions="grpc-v2",
         multi_model=True,
         containers=containers,
         grpc_endpoint=8085,
