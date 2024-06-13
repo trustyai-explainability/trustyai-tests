@@ -1,9 +1,16 @@
 import pytest
 
-from resources.inference_service import InferenceService
-from resources.serving_runtime import ServingRuntime
-from tests.utils import wait_for_model_pods_registered
-from utilities.constants import ONNX, OVMS, OPENVINO_MODEL_FORMAT, OVMS_QUAY_IMAGE, GRPC, OVMS_RUNTIME_NAME
+from trustyai_tests.resources.inference_service import InferenceService
+from trustyai_tests.resources.serving_runtime import ServingRuntime
+from trustyai_tests.tests.utils import wait_for_model_pods_registered
+from trustyai_tests.utilities.constants import (
+    ONNX,
+    OVMS,
+    OPENVINO_MODEL_FORMAT,
+    OVMS_QUAY_IMAGE,
+    GRPC,
+    OVMS_RUNTIME_NAME,
+)
 
 
 @pytest.fixture(scope="class")

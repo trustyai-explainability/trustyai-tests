@@ -5,11 +5,11 @@ from ocp_resources.namespace import Namespace
 from ocp_resources.resource import get_client
 from ocp_resources.service_account import ServiceAccount
 
-from resources.storage.minio_pod import MinioPod
-from resources.storage.minio_secret import MinioSecret
-from resources.storage.minio_service import MinioService
-from resources.trustyai_service import TrustyAIService
-from utilities.constants import (
+from trustyai_tests.resources.storage.minio_pod import MinioPod
+from trustyai_tests.resources.storage.minio_secret import MinioSecret
+from trustyai_tests.resources.storage.minio_service import MinioService
+from trustyai_tests.resources.trustyai_service import TrustyAIService
+from trustyai_tests.utilities.constants import (
     TRUSTYAI_SERVICE,
     MINIO_IMAGE,
 )
@@ -20,7 +20,7 @@ def client():
     yield get_client()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="class")
 def model_namespace(client):
     with Namespace(
         client=client,
@@ -32,7 +32,7 @@ def model_namespace(client):
         yield ns
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="class")
 def modelmesh_serviceaccount(client, model_namespace):
     with ServiceAccount(client=client, name="modelmesh-serving-sa", namespace=model_namespace.name):
         yield
@@ -60,7 +60,7 @@ def user_workload_monitoring_config(client):
         yield cm
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="class")
 def trustyai_service(
     client,
     model_namespace,
@@ -80,7 +80,7 @@ def trustyai_service(
         yield trusty
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="class")
 def minio_service(client, model_namespace):
     with MinioService(
         name="minio",
@@ -92,13 +92,13 @@ def minio_service(client, model_namespace):
         yield ms
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="class")
 def minio_pod(client, model_namespace):
     with MinioPod(client=client, name="minio", namespace=model_namespace.name, image=MINIO_IMAGE) as mp:
         yield mp
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="class")
 def minio_secret(client, model_namespace):
     with MinioSecret(
         client=client,
@@ -114,6 +114,6 @@ def minio_secret(client, model_namespace):
         yield ms
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="class")
 def minio_data_connection(minio_service, minio_pod, minio_secret):
     yield minio_secret

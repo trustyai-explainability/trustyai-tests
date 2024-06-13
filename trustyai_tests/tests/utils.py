@@ -11,7 +11,7 @@ from ocp_resources.pod import Pod
 from ocp_resources.route import Route
 from ocp_utilities.monitoring import Prometheus
 
-from utilities.constants import (
+from trustyai_tests.utilities.constants import (
     MM_PAYLOAD_PROCESSORS,
     INFERENCE_ENDPOINT,
     TRUSTYAI_SERVICE,
@@ -302,7 +302,7 @@ def verify_metric_scheduling(namespace, model, endpoint, expected_metric_name):
     assert response_data["timestamp"] != "", "Timestamp is empty"
 
 
-def verify_trustyai_metric_prometheus(namespace, model, prometheus_query, metric_name):
+def verify_trustyai_metric_prometheus(namespace, model, prometheus_query, metric_name, max_retries=10, retry_delay=1):
     """
     Sends a query to Prometheus for a specific TrustyAI metric and verifies the result.
 
@@ -316,7 +316,20 @@ def verify_trustyai_metric_prometheus(namespace, model, prometheus_query, metric
     prom = Prometheus(verify_ssl=False, bearer_token=prom_token)
 
     logger.info(f"Sending Prometheus query: {prometheus_query}")
-    result = prom.query(query=prometheus_query)
+
+    retry_count = 0
+    while retry_count < max_retries:
+        result = prom.query(query=prometheus_query)
+
+        if result["status"] == "success" and len(result["data"]["result"]) > 0:
+            break
+
+        retry_count += 1
+        if retry_count < max_retries:
+            logger.info(f"No Prometheus data for the metric {metric_name}. Retrying in {retry_delay} second(s)...")
+            sleep(retry_delay)
+        else:
+            assert False, f"No Prometheus data for the metric {metric_name} after {max_retries} retries."
 
     logger.info(msg=json.dumps(result, indent=4))
 

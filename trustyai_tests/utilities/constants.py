@@ -62,4 +62,4 @@ GRPC = "grpc"
 # OpenDataHub
 OPENDATAHUB_IO = "opendatahub.io"
 
-MODEL_DATA_PATH = "./model_data"
+MODEL_DATA_PATH = "./trustyai_tests/model_data"

@@ -1,9 +1,16 @@
 import pytest
 
-from resources.inference_service import InferenceService
-from resources.serving_runtime import ServingRuntime
-from tests.utils import wait_for_model_pods_registered
-from utilities.constants import GRPC, MLSERVER, MLSERVER_RUNTIME_NAME, MLSERVER_QUAY_IMAGE, SKLEARN, XGBOOST
+from trustyai_tests.resources.inference_service import InferenceService
+from trustyai_tests.resources.serving_runtime import ServingRuntime
+from trustyai_tests.tests.utils import wait_for_model_pods_registered
+from trustyai_tests.utilities.constants import (
+    GRPC,
+    MLSERVER,
+    MLSERVER_RUNTIME_NAME,
+    MLSERVER_QUAY_IMAGE,
+    SKLEARN,
+    XGBOOST,
+)
 
 
 @pytest.fixture(scope="class")

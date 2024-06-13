@@ -1,6 +1,6 @@
 from ocp_resources.resource import NamespacedResource
 
-from utilities.constants import TRUSTYAI_API_GROUP, TRUSTYAI_SERVICE_IMAGE
+from trustyai_tests.utilities.constants import TRUSTYAI_API_GROUP, TRUSTYAI_SERVICE_IMAGE
 
 
 # TODO: Move this to openshift-python-wrapper once we are confident

@@ -1,6 +1,6 @@
 import http
 
-from tests.utils import (
+from trustyai_tests.tests.utils import (
     verify_trustyai_model_metadata,
     send_data_to_inference_service,
     verify_trustyai_metric_prometheus,
@@ -8,7 +8,7 @@ from tests.utils import (
     verify_metric_scheduling,
     upload_data_to_trustyai_service,
 )
-from utilities.constants import (
+from trustyai_tests.utilities.constants import (
     TRUSTYAI_MEANSHIFT_ENDPOINT,
     TRUSTYAI_MEANSHIFT,
     TRUSTYAI_FOURIERMMD,

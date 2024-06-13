@@ -1,6 +1,6 @@
 from ocp_resources.secret import Secret
 
-from utilities.constants import OPENDATAHUB_IO
+from trustyai_tests.utilities.constants import OPENDATAHUB_IO
 
 
 class MinioSecret(Secret):
