@@ -9,12 +9,14 @@ import kubernetes
 import requests
 from ocp_resources.pod import Pod
 from ocp_resources.route import Route
+from ocp_utilities.monitoring import Prometheus
 
 from utilities.constants import (
     MM_PAYLOAD_PROCESSORS,
     INFERENCE_ENDPOINT,
     TRUSTYAI_SERVICE,
     TRUSTYAI_MODEL_METADATA_ENDPOINT,
+    TRUSTYAI_UPLOAD_ENDPOINT,
 )
 
 logger = logging.getLogger(__name__)
@@ -52,8 +54,8 @@ def get_ocp_token():
     return subprocess.check_output(["oc", "whoami", "-t"]).decode().strip()
 
 
-def get_trustyai_pod(client, namespace):
-    for pod in Pod.get(dyn_client=client, namespace=namespace.name):
+def get_trustyai_pod(namespace):
+    for pod in Pod.get(namespace=namespace.name):
         if TRUSTYAI_SERVICE in pod.name:
             return pod
 
@@ -229,3 +231,136 @@ def send_data_to_inference_service(namespace, inference_service, data_path, max_
                         sleep(retry_delay)
             else:
                 logger.error(f"Maximum retries reached for file: {file_name}")
+
+
+def upload_data_to_trustyai_service(namespace, data_path):
+    with open(f"{data_path}", "r") as file:
+        data = file.read()
+
+    logger.info(msg="Uploading data to TrustyAI Service.")
+    return send_trustyai_service_request(
+        namespace=namespace, endpoint=TRUSTYAI_UPLOAD_ENDPOINT, method=http.HTTPMethod.POST, data=data
+    )
+
+
+def verify_metric_request(namespace, model, endpoint, expected_metric_name):
+    """
+    Send a basic metric request to TrustyAI and validates the response.
+
+    :param namespace (Namespace): Namespace where TrustyAIService and the corresponding InferenceService live.
+    :param model (InferenceService): InferenceService for which the metric has been calculated.
+    :param endpoint (str): TrustyAI endpoint to request the metric.
+    :param expected_metric_name (str): Metric name used to validate the response
+    """
+
+    logger.info(f"Sending TrustyAI metric request: {endpoint}")
+    response = send_trustyai_service_request(
+        namespace=namespace,
+        endpoint=endpoint,
+        method=http.HTTPMethod.POST,
+        json={"modelId": model.name, "referenceTag": "TRAINING"},
+    )
+    response_data = json.loads(response.text)
+    logger.info(msg=f"Response: {json.dumps(json.loads(response.text), indent=2)}")
+
+    assert response.status_code == http.HTTPStatus.OK, f"Unexpected status code: {response.status_code}"
+    assert response_data["timestamp"] != "", "Timestamp is empty"
+    assert response_data["type"] == "metric", "Incorrect type"
+    assert response_data["value"] != "", "Value is empty"
+    assert response_data["namedValues"] != "", "Named values are empty"
+    assert response_data["specificDefinition"] != "", "Specific definition is empty"
+    assert (
+        response_data["name"] == expected_metric_name
+    ), f"Wrong name: {response_data['name']}, expected: {expected_metric_name}"
+    assert response_data["id"] != "", "ID is empty"
+    assert response_data["thresholds"] != "", "Thresholds are empty"
+
+
+def verify_metric_scheduling(namespace, model, endpoint, expected_metric_name):
+    """
+    Send a request to schedule a metric to TrustyAI and validates the response.
+
+    :param namespace (Namespace): Namespace where TrustyAIService and the corresponding InferenceService live.
+    :param model (InferenceService): InferenceService for which the metric has been calculated.
+    :param endpoint (str): TrustyAI endpoint to request the metric.
+    :param expected_metric_name (str): Metric name used to validate the response
+    """
+
+    logger.info(f"Sending TrustyAI metric request: {endpoint}")
+    response = send_trustyai_service_request(
+        namespace=namespace,
+        endpoint=endpoint,
+        method=http.HTTPMethod.POST,
+        json={"modelId": model.name, "referenceTag": "TRAINING"},
+    )
+    response_data = json.loads(response.text)
+
+    logger.info(msg=f"Response: {json.dumps(json.loads(response.text), indent=2)}")
+
+    assert response.status_code == http.HTTPStatus.OK, f"Unexpected status code: {response.status_code}"
+    assert response_data["requestId"] != "", "Request ID is empty"
+    assert response_data["timestamp"] != "", "Timestamp is empty"
+
+
+def verify_trustyai_metric_prometheus(namespace, model, prometheus_query, metric_name):
+    """
+    Sends a query to Prometheus for a specific TrustyAI metric and verifies the result.
+
+    :param namespace (Namespace): Namespace where TrustyAIService and InferenceService live
+    :param model (InferenceService): InferenceService for which the metric has been calculated
+    :param prometheus_query (str): Prometheus query
+    :param metric_name (str): Name of the metric
+    """
+
+    prom_token = get_prometheus_uwm_token()
+    prom = Prometheus(verify_ssl=False, bearer_token=prom_token)
+
+    logger.info(f"Sending Prometheus query: {prometheus_query}")
+    result = prom.query(query=prometheus_query)
+
+    logger.info(msg=json.dumps(result, indent=4))
+
+    assert (
+        result["status"] == "success"
+    ), f"Unexpected status in result. Expected: 'success', Actual: {result['status']}"
+    for item in result["data"]["result"]:
+        expected_metric_name = f"trustyai_{metric_name.lower()}"
+        assert (
+            item["metric"]["__name__"] == expected_metric_name
+        ), f"Incorrect metric name. Expected: {expected_metric_name}, Actual: {item['metric']['__name__']}"
+        assert item["metric"]["batch_size"] != "", "Batch size is empty"
+        assert (
+            item["metric"]["job"] == TRUSTYAI_SERVICE
+        ), f"Incorrect job name. Expected: {TRUSTYAI_SERVICE}, Actual: {item['metric']['job']}"
+        expected_metric_name_upper = metric_name.upper()
+        assert item["metric"]["metricName"] == expected_metric_name_upper, (
+            f"Incorrect metric name capitalization. "
+            f"Expected: {expected_metric_name_upper}, Actual: {item['metric']['metricName']}"
+        )
+        assert (
+            item["metric"]["model"] == model.name
+        ), f"Incorrect model name. Expected: {model.name}, Actual: {item['metric']['model']}"
+        assert (
+            item["metric"]["namespace"] == namespace.name
+        ), f"Incorrect namespace. Expected: {namespace.name}, Actual: {item['metric']['namespace']}"
+        expected_pod_name = get_trustyai_pod(namespace=namespace).name
+        assert (
+            item["metric"]["pod"] == expected_pod_name
+        ), f"Incorrect pod name. Expected: {expected_pod_name}, Actual: {item['metric']['pod']}"
+        assert (
+            item["metric"]["request"] != ""
+        ), "Request is empty"  # TODO: Try to find a way to get the requestId for this
+        assert (
+            item["metric"]["service"] == TRUSTYAI_SERVICE
+        ), f"Incorrect service name. Expected: {TRUSTYAI_SERVICE}, Actual: {item['metric']['service']}"
+        assert item["metric"]["subcategory"] != "", "Subcategory is empty"
+        assert item["value"] != "", "Value is empty"
+
+
+def get_prometheus_uwm_token(uwm_namespace="openshift-user-workload-monitoring", duration="1800s"):
+    token_command = f"oc create token thanos-ruler -n {uwm_namespace} --duration={duration}"
+    try:
+        result = subprocess.run(token_command, shell=True, check=True, capture_output=True, text=True)
+        return result.stdout.strip()
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"Command {token_command} failed to execute: {e.stderr}")
