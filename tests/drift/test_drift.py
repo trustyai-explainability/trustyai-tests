@@ -1,105 +1,157 @@
 import http
-import logging
 
-
-from tests.drift.utils import (
-    verify_meanshift_request,
-    verify_approxkstest_request,
-    verify_fouriermmd_request,
-    verify_kstest_request,
-    upload_data_to_trustyai_service,
-)
 from tests.utils import (
     verify_trustyai_model_metadata,
+    send_data_to_inference_service,
+    verify_trustyai_metric_prometheus,
+    verify_metric_request,
+    verify_metric_scheduling,
+    upload_data_to_trustyai_service,
 )
-
-logger = logging.getLogger(__name__)
-PROMETHEUS_K8S = "prometheus-k8s"
-OPENSHIFT_MONITORING = "openshift-monitoring"
+from utilities.constants import (
+    TRUSTYAI_MEANSHIFT_ENDPOINT,
+    TRUSTYAI_MEANSHIFT,
+    TRUSTYAI_FOURIERMMD,
+    TRUSTYAI_KSTEST,
+    TRUSTYAI_APPROXKSTEST,
+    MODEL_DATA_PATH,
+    TRUSTYAI_MEANSHIFT_SCHEDULE_ENDPOINT,
+    TRUSTYAI_FOURIERMMD_ENDPOINT,
+    TRUSTYAI_FOURIERMMD_SCHEDULE_ENDPOINT,
+    TRUSTYAI_KSTEST_ENDPOINT,
+    TRUSTYAI_KSTEST_SCHEDULE_ENDPOINT,
+    TRUSTYAI_APPROXKSTEST_ENDPOINT,
+    TRUSTYAI_APPROXKSTEST_SCHEDULE_ENDPOINT,
+)
 
 
 class TestDriftMetrics:
+    """
+    Verifies the different input data drift metrics available in TrustyAI.
+    Drift metrics: Meanshift, FourierMMD, KSTest, and ApproxKSTest.
+
+    1. Send data to the model (gaussian_credit_model).
+    2. Upload training data for TrustyAI (used as baseline to calculate the drift metrics).
+    3. For each metric:
+        3.1. Send a basic request and verify the response.
+        3.2. Send a schedule request and verify the response.
+        3.3. Verify that the metric has reached Prometheus.
+    """
+
     def test_gaussian_credit_model_metadata(self, model_namespace, trustyai_service, gaussian_credit_model):
-        input_data_path = f"./model_data/{gaussian_credit_model.name}"
+        path = f"{MODEL_DATA_PATH}/{gaussian_credit_model.name}"
+
+        send_data_to_inference_service(
+            inference_service=gaussian_credit_model,
+            namespace=model_namespace,
+            data_path=f"{path}/data_batches",
+        )
+
         response = upload_data_to_trustyai_service(
             namespace=model_namespace,
-            data_path=input_data_path,
+            data_path=f"{path}/training_data.json",
         )
         assert response.status_code == http.HTTPStatus.OK
-        assert response.content == b"1000 datapoints successfully added to gaussian-credit-model data."
 
         verify_trustyai_model_metadata(
             namespace=model_namespace,
             model=gaussian_credit_model,
-            data_path=input_data_path,
+            data_path=path,
             expected_percentage_observations=0.3,
         )
 
-    def test_meanshift(self, model_namespace, trustyai_service, gaussian_credit_model):
-        verify_meanshift_request(namespace=model_namespace, model=gaussian_credit_model)
-
-        """
-        input_data_path = "./model_data/data_batches"
-        send_data_to_inference_service(
-            inference_service=gaussian_credit_model,
+    def test_request_meanshift(self, model_namespace, trustyai_service, gaussian_credit_model):
+        verify_metric_request(
             namespace=model_namespace,
-            data_path=input_data_path,
+            model=gaussian_credit_model,
+            endpoint=TRUSTYAI_MEANSHIFT_ENDPOINT,
+            expected_metric_name=TRUSTYAI_MEANSHIFT.upper(),
         )
-        time.sleep(180)
 
-        prom = Prometheus(
-            namespace="openshift-user-workload-monitoring",
-            resource_name="federate",
-            verify_ssl=False,
-            bearer_token=get_prometheus_user_workload_token())
-        result = prom.query(query="trustyai_meanshift{namespace='test-namespace'}")
+    def test_schedule_meanshift(self, model_namespace, trustyai_service, gaussian_credit_model):
+        verify_metric_scheduling(
+            namespace=model_namespace,
+            model=gaussian_credit_model,
+            endpoint=TRUSTYAI_MEANSHIFT_SCHEDULE_ENDPOINT,
+            expected_metric_name=TRUSTYAI_MEANSHIFT.upper(),
+        )
 
-        print(result)
-        """
+    def test_meanshift_prometheus_query(self, model_namespace, gaussian_credit_model):
+        verify_trustyai_metric_prometheus(
+            namespace=model_namespace,
+            model=gaussian_credit_model,
+            prometheus_query=f'trustyai_{TRUSTYAI_MEANSHIFT.lower()}{{namespace="{model_namespace.name}"}}',
+            metric_name=TRUSTYAI_MEANSHIFT,
+        )
 
-    def test_approxkstest(self, model_namespace, trustyai_service, gaussian_credit_model):
-        verify_approxkstest_request(namespace=model_namespace, model=gaussian_credit_model)
+    def test_request_fouriermmd(self, model_namespace, trustyai_service, gaussian_credit_model):
+        verify_metric_request(
+            namespace=model_namespace,
+            model=gaussian_credit_model,
+            endpoint=TRUSTYAI_FOURIERMMD_ENDPOINT,
+            expected_metric_name=TRUSTYAI_FOURIERMMD.upper(),
+        )
 
-    def test_fouriermmd(self, model_namespace, trustyai_service, gaussian_credit_model):
-        verify_fouriermmd_request(namespace=model_namespace, model=gaussian_credit_model)
+    def test_schedule_fouriermmd(self, model_namespace, trustyai_service, gaussian_credit_model):
+        verify_metric_scheduling(
+            namespace=model_namespace,
+            model=gaussian_credit_model,
+            endpoint=TRUSTYAI_FOURIERMMD_SCHEDULE_ENDPOINT,
+            expected_metric_name=TRUSTYAI_FOURIERMMD.upper(),
+        )
 
-    def test_kstest(self, model_namespace, trustyai_service, gaussian_credit_model):
-        verify_kstest_request(namespace=model_namespace, model=gaussian_credit_model)
+    def test_fouriermmd_prometheus_query(self, model_namespace, gaussian_credit_model):
+        verify_trustyai_metric_prometheus(
+            namespace=model_namespace,
+            model=gaussian_credit_model,
+            prometheus_query=f'trustyai_{TRUSTYAI_FOURIERMMD.lower()}{{namespace="{model_namespace.name}"}}',
+            metric_name=TRUSTYAI_FOURIERMMD,
+        )
 
+    def test_request_kstest(self, model_namespace, trustyai_service, gaussian_credit_model):
+        verify_metric_request(
+            namespace=model_namespace,
+            model=gaussian_credit_model,
+            endpoint=TRUSTYAI_KSTEST_ENDPOINT,
+            expected_metric_name=TRUSTYAI_KSTEST.upper(),
+        )
 
-"""
+    def test_schedule_kstest_scheduling_request(self, model_namespace, trustyai_service, gaussian_credit_model):
+        verify_metric_scheduling(
+            namespace=model_namespace,
+            model=gaussian_credit_model,
+            endpoint=TRUSTYAI_KSTEST_SCHEDULE_ENDPOINT,
+            expected_metric_name=TRUSTYAI_KSTEST.upper(),
+        )
 
-def get_prometheus_k8s_token(duration="1800s"):
-    token_command = f"oc create token prometheus-k8s -n openshift-monitoring --duration={duration}"
-    try:
-        result = subprocess.run(token_command, shell=True, check=True, capture_output=True, text=True)
-        return result.stdout.strip()
-    except subprocess.CalledProcessError as e:
-        raise AssertionError(f"Command {token_command} failed to execute: {e.stderr}")
+    def test_kstest_prometheus_query(self, model_namespace, gaussian_credit_model):
+        verify_trustyai_metric_prometheus(
+            namespace=model_namespace,
+            model=gaussian_credit_model,
+            prometheus_query=f'trustyai_{TRUSTYAI_KSTEST.lower()}{{namespace="{model_namespace.name}"}}',
+            metric_name=TRUSTYAI_KSTEST,
+        )
 
+    def test_request_approxkstest(self, model_namespace, trustyai_service, gaussian_credit_model):
+        verify_metric_request(
+            namespace=model_namespace,
+            model=gaussian_credit_model,
+            endpoint=TRUSTYAI_APPROXKSTEST_ENDPOINT,
+            expected_metric_name=TRUSTYAI_APPROXKSTEST.upper(),
+        )
 
-def get_prometheus_user_workload_token():
-    try:
-        # Get the secret name
-        secret_command = "oc get secret -n openshift-user-workload-monitoring
-         | grep prometheus-user-workload-token | head -n 1 | awk '{print $1}'"
-        secret_result = subprocess.run(secret_command, shell=True, check=True, capture_output=True, text=True)
-        secret_name = secret_result.stdout.strip()
+    def test_schedule_approxkstest(self, model_namespace, trustyai_service, gaussian_credit_model):
+        verify_metric_scheduling(
+            namespace=model_namespace,
+            model=gaussian_credit_model,
+            endpoint=TRUSTYAI_APPROXKSTEST_SCHEDULE_ENDPOINT,
+            expected_metric_name=TRUSTYAI_APPROXKSTEST.upper(),
+        )
 
-        # Get the token from the secret
-        token_command = f"oc get secret {secret_name} -n openshift-user-workload-monitoring -o json"
-        token_result = subprocess.run(token_command, shell=True, check=True, capture_output=True, text=True)
-        token_data = json.loads(token_result.stdout)
-        token_base64 = token_data['data']['token']
-        token = base64.b64decode(token_base64).decode('utf-8')
-
-        # Get the Thanos Querier host
-        host_command = "oc get route thanos-querier -n openshift-monitoring -o json"
-        host_result = subprocess.run(host_command, shell=True, check=True, capture_output=True, text=True)
-        host_data = json.loads(host_result.stdout)
-        thanos_querier_host = host_data['spec']['host']
-
-        return token
-    except subprocess.CalledProcessError as e:
-        raise AssertionError(f"Command failed to execute: {e.stderr}")
-"""
+    def test_approxkstest_prometheus_query(self, model_namespace, gaussian_credit_model):
+        verify_trustyai_metric_prometheus(
+            namespace=model_namespace,
+            model=gaussian_credit_model,
+            prometheus_query=f'trustyai_{TRUSTYAI_APPROXKSTEST.lower()}{{namespace="{model_namespace.name}"}}',
+            metric_name=TRUSTYAI_APPROXKSTEST,
+        )
