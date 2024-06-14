@@ -1,6 +1,6 @@
 from ocp_resources.resource import NamespacedResource
 
-from utilities.constants import KSERVE_API_GROUP
+from trustyai_tests.constants import KSERVE_API_GROUP
 
 
 # TODO: Move this to openshift-python-wrapper once we are confident

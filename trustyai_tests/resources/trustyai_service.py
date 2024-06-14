@@ -1,6 +1,6 @@
 from ocp_resources.resource import NamespacedResource
 
-from utilities.constants import TRUSTYAI_API_GROUP, TRUSTYAI_SERVICE_IMAGE
+from trustyai_tests.constants import TRUSTYAI_API_GROUP
 
 
 # TODO: Move this to openshift-python-wrapper once we are confident
@@ -14,7 +14,7 @@ class TrustyAIService(NamespacedResource):
     def __init__(
         self,
         replicas=1,
-        image=TRUSTYAI_SERVICE_IMAGE,
+        image="quay.io/trustyaiservice/trustyai-service",
         tag="latest",
         storage_format=None,
         storage_folder=None,
