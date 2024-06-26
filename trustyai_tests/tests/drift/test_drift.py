@@ -54,6 +54,7 @@ class TestDriftMetrics:
             model=gaussian_credit_model,
             endpoint=get_drift_metric_endpoint(metric=DriftMetrics.TRUSTYAI_MEANSHIFT.value),
             expected_metric_name=DriftMetrics.TRUSTYAI_MEANSHIFT.value.upper(),
+            json_data={"modelId": gaussian_credit_model.name, "referenceTag": "TRAINING"},
         )
 
     def test_schedule_meanshift(self, model_namespace, trustyai_service, gaussian_credit_model):
@@ -61,7 +62,7 @@ class TestDriftMetrics:
             namespace=model_namespace,
             model=gaussian_credit_model,
             endpoint=get_drift_metric_endpoint(metric=DriftMetrics.TRUSTYAI_MEANSHIFT.value, schedule=True),
-            expected_metric_name=DriftMetrics.TRUSTYAI_MEANSHIFT.value.upper(),
+            json_data={"modelId": gaussian_credit_model.name, "referenceTag": "TRAINING"},
         )
 
     def test_meanshift_prometheus_query(self, model_namespace, gaussian_credit_model):
@@ -78,6 +79,7 @@ class TestDriftMetrics:
             model=gaussian_credit_model,
             endpoint=get_drift_metric_endpoint(metric=DriftMetrics.TRUSTYAI_FOURIERMMD.value),
             expected_metric_name=DriftMetrics.TRUSTYAI_FOURIERMMD.value.upper(),
+            json_data={"modelId": gaussian_credit_model.name, "referenceTag": "TRAINING"},
         )
 
     def test_schedule_fouriermmd(self, model_namespace, trustyai_service, gaussian_credit_model):
@@ -85,7 +87,7 @@ class TestDriftMetrics:
             namespace=model_namespace,
             model=gaussian_credit_model,
             endpoint=get_drift_metric_endpoint(metric=DriftMetrics.TRUSTYAI_FOURIERMMD.value, schedule=True),
-            expected_metric_name=DriftMetrics.TRUSTYAI_FOURIERMMD.value.upper(),
+            json_data={"modelId": gaussian_credit_model.name, "referenceTag": "TRAINING"},
         )
 
     def test_fouriermmd_prometheus_query(self, model_namespace, gaussian_credit_model):
@@ -102,6 +104,7 @@ class TestDriftMetrics:
             model=gaussian_credit_model,
             endpoint=get_drift_metric_endpoint(metric=DriftMetrics.TRUSTYAI_KSTEST.value),
             expected_metric_name=DriftMetrics.TRUSTYAI_KSTEST.value.upper(),
+            json_data={"modelId": gaussian_credit_model.name, "referenceTag": "TRAINING"},
         )
 
     def test_schedule_kstest_scheduling_request(self, model_namespace, trustyai_service, gaussian_credit_model):
@@ -109,7 +112,7 @@ class TestDriftMetrics:
             namespace=model_namespace,
             model=gaussian_credit_model,
             endpoint=get_drift_metric_endpoint(metric=DriftMetrics.TRUSTYAI_KSTEST.value, schedule=True),
-            expected_metric_name=DriftMetrics.TRUSTYAI_KSTEST.value.upper(),
+            json_data={"modelId": gaussian_credit_model.name, "referenceTag": "TRAINING"},
         )
 
     def test_kstest_prometheus_query(self, model_namespace, gaussian_credit_model):
@@ -126,6 +129,7 @@ class TestDriftMetrics:
             model=gaussian_credit_model,
             endpoint=get_drift_metric_endpoint(metric=DriftMetrics.TRUSTYAI_APPROXKSTEST.value),
             expected_metric_name=DriftMetrics.TRUSTYAI_APPROXKSTEST.value.upper(),
+            json_data={"modelId": gaussian_credit_model.name, "referenceTag": "TRAINING"},
         )
 
     def test_schedule_approxkstest(self, model_namespace, trustyai_service, gaussian_credit_model):
@@ -133,7 +137,7 @@ class TestDriftMetrics:
             namespace=model_namespace,
             model=gaussian_credit_model,
             endpoint=get_drift_metric_endpoint(metric=DriftMetrics.TRUSTYAI_APPROXKSTEST.value, schedule=True),
-            expected_metric_name=DriftMetrics.TRUSTYAI_APPROXKSTEST.value.upper(),
+            json_data={"modelId": gaussian_credit_model.name, "referenceTag": "TRAINING"},
         )
 
     def test_approxkstest_prometheus_query(self, model_namespace, gaussian_credit_model):

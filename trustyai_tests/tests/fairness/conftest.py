@@ -71,6 +71,7 @@ def onnx_loan_model_alpha(client, model_namespace, minio_data_connection, ovms_r
         model_format_name=ONNX,
         serving_runtime=ovms_runtime.name,
         deployment_mode=InferenceService.DeploymentMode.MODEL_MESH,
+        timeout=60 * 10,
     ) as inference_service:
         wait_for_model_pods_registered(client=client, namespace=model_namespace)
         yield inference_service

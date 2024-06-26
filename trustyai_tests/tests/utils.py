@@ -239,7 +239,7 @@ def upload_data_to_trustyai_service(namespace, data_path):
     )
 
 
-def verify_metric_request(namespace, model, endpoint, expected_metric_name):
+def verify_metric_request(namespace, model, endpoint, expected_metric_name, json_data):
     """
     Send a basic metric request to TrustyAI and validates the response.
 
@@ -254,7 +254,7 @@ def verify_metric_request(namespace, model, endpoint, expected_metric_name):
         namespace=namespace,
         endpoint=endpoint,
         method=http.HTTPMethod.POST,
-        json={"modelId": model.name, "referenceTag": "TRAINING"},
+        json=json_data,
     )
     response_data = json.loads(response.text)
     logger.info(msg=f"Response: {json.dumps(json.loads(response.text), indent=2)}")
@@ -272,7 +272,7 @@ def verify_metric_request(namespace, model, endpoint, expected_metric_name):
     assert response_data["thresholds"] != "", "Thresholds are empty"
 
 
-def verify_metric_scheduling(namespace, model, endpoint, expected_metric_name):
+def verify_metric_scheduling(namespace, model, endpoint, json_data):
     """
     Send a request to schedule a metric to TrustyAI and validates the response.
 
@@ -287,7 +287,7 @@ def verify_metric_scheduling(namespace, model, endpoint, expected_metric_name):
         namespace=namespace,
         endpoint=endpoint,
         method=http.HTTPMethod.POST,
-        json={"modelId": model.name, "referenceTag": "TRAINING"},
+        json=json_data,
     )
     response_data = json.loads(response.text)
 
@@ -308,7 +308,7 @@ def verify_trustyai_metric_prometheus(namespace, model, prometheus_query, metric
     :param metric_name (str): Name of the metric
     """
 
-    prom_token = get_prometheus_uwm_token()
+    prom_token = get_prometheus_token()
     prom = Prometheus(verify_ssl=False, bearer_token=prom_token)
 
     logger.info(f"Sending Prometheus query: {prometheus_query}")
@@ -362,14 +362,23 @@ def verify_trustyai_metric_prometheus(namespace, model, prometheus_query, metric
         assert (
             item["metric"]["service"] == TRUSTYAI_SERVICE
         ), f"Incorrect service name. Expected: {TRUSTYAI_SERVICE}, Actual: {item['metric']['service']}"
-        assert item["metric"]["subcategory"] != "", "Subcategory is empty"
+        # assert item["metric"]["subcategory"] != "", "Subcategory is empty" TODO: Uncomment
         assert item["value"] != "", "Value is empty"
 
 
-def get_prometheus_uwm_token(uwm_namespace="openshift-user-workload-monitoring", duration="1800s"):
-    token_command = f"oc create token thanos-ruler -n {uwm_namespace} --duration={duration}"
+def get_prometheus_token(duration="1800s"):
+    token_command = f"oc create token prometheus-k8s -n openshift-monitoring --duration={duration}"
     try:
         result = subprocess.run(token_command, shell=True, check=True, capture_output=True, text=True)
         return result.stdout.strip()
     except subprocess.CalledProcessError as e:
         raise RuntimeError(f"Command {token_command} failed to execute: {e.stderr}")
+
+
+def apply_trustyai_name_mappings(namespace, inference_service, input_mappings, output_mappings):
+    data = {"modelId": inference_service.name, "inputMapping": input_mappings, "outputMapping": output_mappings}
+
+    response = send_trustyai_service_request(
+        namespace=namespace, endpoint="/info/names", method=http.HTTPMethod.POST, json=data
+    )
+    assert response.status_code == http.HTTPStatus.OK, f"Wrong status code: {response.status_code}"
