@@ -1,4 +1,4 @@
-from trustyai_tests.tests.fairness.utils import FairnessMetrics, get_fairness_metric_endpoint
+from trustyai_tests.tests.metrics import get_metric_endpoint, Metric
 from trustyai_tests.tests.utils import (
     send_data_to_inference_service,
     verify_trustyai_model_metadata,
@@ -15,6 +15,19 @@ WILL_DEFAULT = "Will Default?"
 
 
 class TestFairnessMetrics:
+    """
+    Verifies the different fairness metrics available in TrustyAI.
+    Fairness metrics: Statistical Parity Difference (SPD) and Disparate Impact Ratio (DIR).
+
+    1. Send data to the model (onnx_loan_model_alpha).
+    2. Send data to the model.
+    3. Apply name mappings.
+    4. For each metric:
+        4.1. Send a basic request and verify the response.
+        4.2. Send a schedule request and verify the response.
+        4.3. Verify that the metric has reached Prometheus.
+    """
+
     def test_loan_model_metadata(self, model_namespace, trustyai_service, onnx_loan_model_alpha):
         input_data_path = f"{MODEL_DATA_PATH}/{onnx_loan_model_alpha.name}"
         send_data_to_inference_service(
@@ -53,8 +66,8 @@ class TestFairnessMetrics:
         verify_metric_request(
             namespace=model_namespace,
             model=onnx_loan_model_alpha,
-            endpoint=get_fairness_metric_endpoint(metric=FairnessMetrics.SPD.value),
-            expected_metric_name=FairnessMetrics.SPD.value.upper(),
+            endpoint=get_metric_endpoint(metric=Metric.SPD),
+            expected_metric_name=Metric.SPD.value.upper(),
             json_data={
                 "modelId": onnx_loan_model_alpha.name,
                 "protectedAttribute": IS_MALE_IDENTIFYING,
@@ -70,7 +83,7 @@ class TestFairnessMetrics:
         verify_metric_scheduling(
             namespace=model_namespace,
             model=onnx_loan_model_alpha,
-            endpoint=get_fairness_metric_endpoint(metric=FairnessMetrics.SPD.value, schedule=True),
+            endpoint=get_metric_endpoint(metric=Metric.SPD, schedule=True),
             json_data={
                 "modelId": onnx_loan_model_alpha.name,
                 "protectedAttribute": IS_MALE_IDENTIFYING,
@@ -86,16 +99,16 @@ class TestFairnessMetrics:
         verify_trustyai_metric_prometheus(
             namespace=model_namespace,
             model=onnx_loan_model_alpha,
-            prometheus_query=f"trustyai_{FairnessMetrics.SPD.value}" f'{{namespace="{model_namespace.name}"}}',
-            metric_name=FairnessMetrics.SPD.value,
+            prometheus_query=f"trustyai_{Metric.SPD.value}" f'{{namespace="{model_namespace.name}"}}',
+            metric_name=Metric.SPD.value,
         )
 
     def test_request_dir(self, model_namespace, trustyai_service, onnx_loan_model_alpha):
         verify_metric_request(
             namespace=model_namespace,
             model=onnx_loan_model_alpha,
-            endpoint=get_fairness_metric_endpoint(metric=FairnessMetrics.DIR.value),
-            expected_metric_name=FairnessMetrics.DIR.value.upper(),
+            endpoint=get_metric_endpoint(metric=Metric.DIR),
+            expected_metric_name=Metric.DIR.value.upper(),
             json_data={
                 "modelId": onnx_loan_model_alpha.name,
                 "protectedAttribute": IS_MALE_IDENTIFYING,
@@ -111,7 +124,7 @@ class TestFairnessMetrics:
         verify_metric_scheduling(
             namespace=model_namespace,
             model=onnx_loan_model_alpha,
-            endpoint=get_fairness_metric_endpoint(metric=FairnessMetrics.DIR.value, schedule=True),
+            endpoint=get_metric_endpoint(metric=Metric.DIR, schedule=True),
             json_data={
                 "modelId": onnx_loan_model_alpha.name,
                 "protectedAttribute": IS_MALE_IDENTIFYING,
@@ -127,6 +140,6 @@ class TestFairnessMetrics:
         verify_trustyai_metric_prometheus(
             namespace=model_namespace,
             model=onnx_loan_model_alpha,
-            prometheus_query=f"trustyai_{FairnessMetrics.DIR.value}" f'{{namespace="{model_namespace.name}"}}',
-            metric_name=FairnessMetrics.DIR.value,
+            prometheus_query=f"trustyai_{Metric.DIR.value}" f'{{namespace="{model_namespace.name}"}}',
+            metric_name=Metric.DIR.value,
         )
