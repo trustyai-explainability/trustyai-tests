@@ -64,6 +64,8 @@ def trustyai_service(
     client,
     model_namespace,
     modelmesh_serviceaccount,
+    cluster_monitoring_config,
+    user_workload_monitoring_config,
 ):
     with TrustyAIService(
         name=TRUSTYAI_SERVICE,

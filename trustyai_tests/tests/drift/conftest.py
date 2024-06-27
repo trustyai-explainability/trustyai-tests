@@ -66,6 +66,7 @@ def gaussian_credit_model(client, model_namespace, minio_data_connection, mlserv
         model_format_name=XGBOOST,
         serving_runtime=mlserver_runtime.name,
         deployment_mode=InferenceService.DeploymentMode.MODEL_MESH,
+        timeout=60 * 10,
     ) as inference_service:
         wait_for_model_pods_registered(client=client, namespace=model_namespace)
         yield inference_service
