@@ -362,7 +362,6 @@ def verify_trustyai_metric_prometheus(namespace, model, prometheus_query, metric
         assert (
             item["metric"]["service"] == TRUSTYAI_SERVICE
         ), f"Incorrect service name. Expected: {TRUSTYAI_SERVICE}, Actual: {item['metric']['service']}"
-        # assert item["metric"]["subcategory"] != "", "Subcategory is empty" TODO: Uncomment
         assert item["value"] != "", "Value is empty"
 
 

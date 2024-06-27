@@ -22,7 +22,7 @@ class Metric(Enum):
         self.metric_type = metric_type
 
 
-def get_metric_endpoint(metric: Metric, schedule: bool = False) -> str:
+def get_metric_endpoint(metric, schedule=False):
     base_endpoint = "/metrics/group/fairness" if metric.metric_type == MetricType.FAIRNESS else "/metrics/drift"
     endpoint = f"{base_endpoint}/{metric.value}"
 
