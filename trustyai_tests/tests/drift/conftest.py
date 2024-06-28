@@ -1,7 +1,8 @@
 import pytest
+from ocp_resources.inference_service import InferenceService
+from ocp_resources.serving_runtime import ServingRuntime
 
-from trustyai_tests.resources.inference_service import InferenceService
-from trustyai_tests.resources.serving_runtime import ServingRuntime
+from trustyai_tests.tests.constants import KSERVE_API_GROUP
 from trustyai_tests.tests.utils import wait_for_model_pods_registered
 
 SKLEARN = "sklearn"
@@ -39,17 +40,19 @@ def mlserver_runtime(client, minio_data_connection, model_namespace):
         client=client,
         name=MLSERVER_RUNTIME_NAME,
         namespace=model_namespace.name,
-        supported_model_formats=supported_model_formats,
-        protocol_versions="grpc-v2",
-        multi_model=True,
         containers=containers,
-        grpc_endpoint=8085,
-        grpc_data_endpoint=8001,
-        server_type=MLSERVER,
-        runtime_mgmt_port=8001,
-        mem_buffer_bytes=134217728,
-        model_loading_timeout_millis=90000,
-        enable_route=True,
+        supported_model_formats=supported_model_formats,
+        multi_model=True,
+        protocol_versions=["grpc-v2"],
+        grpc_endpoint="port:8085",
+        grpc_data_endpoint="port:8001",
+        built_in_adapter={
+            "serverType": MLSERVER,
+            "runtimeManagementPort": 8001,
+            "memBufferBytes": 134217728,
+            "modelLoadingTimeoutMillis": 90000,
+        },
+        annotations={"enable-route": "true"},
         label={"name": f"modelmesh-serving-{MLSERVER_RUNTIME_NAME}-SR"},
     ) as mlserver:
         yield mlserver
@@ -61,11 +64,14 @@ def gaussian_credit_model(client, model_namespace, minio_data_connection, mlserv
         client=client,
         name="gaussian-credit-model",
         namespace=model_namespace.name,
-        storage_name=minio_data_connection.name,
-        storage_path=f"{SKLEARN}/gaussian_credit_model.json",
-        model_format_name=XGBOOST,
-        serving_runtime=mlserver_runtime.name,
-        deployment_mode=InferenceService.DeploymentMode.MODEL_MESH,
+        predictor={
+            "model": {
+                "modelFormat": {"name": XGBOOST},
+                "runtime": mlserver_runtime.name,
+                "storage": {"key": minio_data_connection.name, "path": f"{SKLEARN}/gaussian_credit_model.json"},
+            }
+        },
+        annotations={f"{KSERVE_API_GROUP}/deploymentMode": "ModelMesh"},
     ) as inference_service:
         wait_for_model_pods_registered(client=client, namespace=model_namespace)
         yield inference_service

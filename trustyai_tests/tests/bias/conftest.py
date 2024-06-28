@@ -1,10 +1,12 @@
 import pytest
 
-from trustyai_tests.resources.inference_service import InferenceService
-from trustyai_tests.resources.serving_runtime import ServingRuntime
+from ocp_resources.inference_service import InferenceService
+from ocp_resources.serving_runtime import ServingRuntime
+
 from trustyai_tests.tests.utils import wait_for_model_pods_registered
-from trustyai_tests.constants import (
+from trustyai_tests.tests.constants import (
     OPENVINO_MODEL_FORMAT,
+    KSERVE_API_GROUP,
 )
 
 ONNX = "onnx"
@@ -42,17 +44,19 @@ def ovms_runtime(client, minio_data_connection, model_namespace):
         client=client,
         name=OVMS_RUNTIME_NAME,
         namespace=model_namespace.name,
-        supported_model_formats=supported_model_formats,
-        protocol_versions="grpc-v1",
-        multi_model=True,
         containers=containers,
-        grpc_endpoint=8085,
-        grpc_data_endpoint=8001,
-        server_type=OVMS,
-        runtime_mgmt_port=8888,
-        mem_buffer_bytes=134217728,
-        model_loading_timeout_millis=90000,
-        enable_route=True,
+        supported_model_formats=supported_model_formats,
+        multi_model=True,
+        protocol_versions=["grpc-v1"],
+        grpc_endpoint="port:8085",
+        grpc_data_endpoint="port:8001",
+        built_in_adapter={
+            "serverType": OVMS,
+            "runtimeManagementPort": 8888,
+            "memBufferBytes": 134217728,
+            "modelLoadingTimeoutMillis": 90000,
+        },
+        annotations={"enable-route": "true"},
         label={
             "name": f"modelmesh-serving-{OVMS_RUNTIME_NAME}-SR",
         },
@@ -66,11 +70,14 @@ def onnx_loan_model_alpha(client, model_namespace, minio_data_connection, ovms_r
         client=client,
         name="demo-loan-nn-onnx-alpha",
         namespace=model_namespace.name,
-        storage_name=minio_data_connection.name,
-        storage_path="onnx/loan_model_alpha_august.onnx",
-        model_format_name=ONNX,
-        serving_runtime=ovms_runtime.name,
-        deployment_mode=InferenceService.DeploymentMode.MODEL_MESH,
+        predictor={
+            "model": {
+                "modelFormat": {"name": ONNX},
+                "runtime": ovms_runtime.name,
+                "storage": {"key": minio_data_connection.name, "path": "onnx/loan_model_alpha_august.onnx"},
+            }
+        },
+        annotations={f"{KSERVE_API_GROUP}/deploymentMode": "ModelMesh"},
     ) as inference_service:
         wait_for_model_pods_registered(client=client, namespace=model_namespace)
         yield inference_service
