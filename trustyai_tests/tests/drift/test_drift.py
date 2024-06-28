@@ -8,7 +8,7 @@ from trustyai_tests.tests.utils import (
     verify_metric_scheduling,
     upload_data_to_trustyai_service,
 )
-from trustyai_tests.constants import (
+from trustyai_tests.tests.constants import (
     MODEL_DATA_PATH,
 )
 

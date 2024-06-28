@@ -1,5 +1,5 @@
 from trustyai_tests.tests.utils import send_data_to_inference_service, verify_trustyai_model_metadata
-from trustyai_tests.constants import MODEL_DATA_PATH
+from trustyai_tests.tests.constants import MODEL_DATA_PATH
 
 
 class TestBiasMetrics:

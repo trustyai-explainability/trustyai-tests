@@ -11,7 +11,7 @@ from ocp_resources.pod import Pod
 from ocp_resources.route import Route
 from ocp_utilities.monitoring import Prometheus
 
-from trustyai_tests.constants import (
+from trustyai_tests.tests.constants import (
     TRUSTYAI_SERVICE,
 )
 
