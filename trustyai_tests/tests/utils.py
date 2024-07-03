@@ -11,7 +11,7 @@ from ocp_resources.pod import Pod
 from ocp_resources.route import Route
 from ocp_utilities.monitoring import Prometheus
 
-from trustyai_tests.constants import (
+from trustyai_tests.tests.constants import (
     TRUSTYAI_SERVICE,
 )
 
@@ -90,7 +90,9 @@ def verify_trustyai_model_metadata(namespace, model, data_path, expected_percent
         response.status_code == http.HTTPStatus.OK
     ), f"Expected status code {http.HTTPStatus.OK}, but got {response.status_code}"
     model_input_data = parse_input_data(data_path=data_path)
-    model_metadata = parse_trustyai_model_metadata(model_metadata=response.content)
+    model_metadata_list = parse_trustyai_model_metadata(model_metadata=response.content)
+
+    model_metadata = next((m for m in model_metadata_list if m.model_name == model.name), None)
 
     assert (
         model_metadata.model_name == model.name
@@ -108,24 +110,30 @@ def verify_trustyai_model_metadata(namespace, model, data_path, expected_percent
 def parse_trustyai_model_metadata(model_metadata):
     json_data = json.loads(model_metadata)
 
-    try:
-        data = json_data[0]["data"]
-    except (IndexError, KeyError) as exp:
-        raise ValueError(f"Invalid JSON data format. {exp}")
+    model_metadata_list = []
 
-    input_tensor_name = data["inputTensorName"]
-    output_tensor_name = data["outputTensorName"]
-    num_observations = data["observations"]
-    model_name = data["modelId"]
+    for item in json_data:
+        try:
+            data = item["data"]
+        except (IndexError, KeyError) as exp:
+            raise ValueError(f"Invalid JSON data format. {exp}")
 
-    model_metadata = TrustyAIModelMetadata(
-        input_tensor_name=input_tensor_name,
-        output_tensor_name=output_tensor_name,
-        num_observations=num_observations,
-        model_name=model_name,
-        num_features=len(data["inputSchema"]["items"]),
-    )
-    return model_metadata
+        input_tensor_name = data["inputTensorName"]
+        output_tensor_name = data["outputTensorName"]
+        num_observations = data["observations"]
+        model_name = data["modelId"]
+
+        model_metadata_list.append(
+            TrustyAIModelMetadata(
+                input_tensor_name=input_tensor_name,
+                output_tensor_name=output_tensor_name,
+                num_observations=num_observations,
+                model_name=model_name,
+                num_features=len(data["inputSchema"]["items"]),
+            )
+        )
+
+    return model_metadata_list
 
 
 def parse_input_data(data_path):
@@ -161,19 +169,17 @@ def parse_input_data(data_path):
     )
 
 
-def wait_for_model_pods_registered(client, namespace):
+def wait_for_model_pods_registered(namespace):
     """Wait for model pods to be registered by TrustyAIService"""
     pods_with_env_var = False
     all_pods_running = False
-    timeout = 60 * 3
+    timeout = 60 * 10
     start_time = time()
     while not pods_with_env_var or not all_pods_running:  # TODO: Consider using TimeoutSampler in the future
         if time() - start_time > timeout:
             raise TimeoutError("Not all model pods are ready in time")
 
-        model_pods = [
-            pod for pod in Pod.get(dyn_client=client, namespace=namespace.name) if "modelmesh-serving" in pod.name
-        ]
+        model_pods = [pod for pod in Pod.get(namespace=namespace.name) if "modelmesh-serving" in pod.name]
 
         pods_with_env_var = False
         all_pods_running = True
@@ -225,6 +231,7 @@ def send_data_to_inference_service(namespace, inference_service, data_path, max_
                     if retry_count < max_retries:
                         logger.info(f"Retrying in {retry_delay} second(s)...")
                         sleep(retry_delay)
+                sleep(5)
             else:
                 logger.error(f"Maximum retries reached for file: {file_name}")
 
@@ -298,14 +305,16 @@ def verify_metric_scheduling(namespace, model, endpoint, json_data):
     assert response_data["timestamp"] != "", "Timestamp is empty"
 
 
-def verify_trustyai_metric_prometheus(namespace, model, prometheus_query, metric_name, max_retries=10, retry_delay=1):
+def verify_trustyai_metric_prometheus(namespace, model, prometheus_query, metric_name, max_retries=20, retry_delay=2):
     """
-    Sends a query to Prometheus for a specific TrustyAI metric and verifies the result.
+    Sends a query to Prometheus for a specific TrustyAI metric and verifies the result for a specific model.
 
     :param namespace (Namespace): Namespace where TrustyAIService and InferenceService live
     :param model (InferenceService): InferenceService for which the metric has been calculated
     :param prometheus_query (str): Prometheus query
     :param metric_name (str): Name of the metric
+    :param max_retries (int): Maximum number of retries
+    :param retry_delay (int): Delay between retries in seconds
     """
 
     prom_token = get_prometheus_token()
@@ -332,37 +341,44 @@ def verify_trustyai_metric_prometheus(namespace, model, prometheus_query, metric
     assert (
         result["status"] == "success"
     ), f"Unexpected status in result. Expected: 'success', Actual: {result['status']}"
-    for item in result["data"]["result"]:
-        expected_metric_name = f"trustyai_{metric_name.lower()}"
-        assert (
-            item["metric"]["__name__"] == expected_metric_name
-        ), f"Incorrect metric name. Expected: {expected_metric_name}, Actual: {item['metric']['__name__']}"
-        assert item["metric"]["batch_size"] != "", "Batch size is empty"
-        assert (
-            item["metric"]["job"] == TRUSTYAI_SERVICE
-        ), f"Incorrect job name. Expected: {TRUSTYAI_SERVICE}, Actual: {item['metric']['job']}"
-        expected_metric_name_upper = metric_name.upper()
-        assert item["metric"]["metricName"] == expected_metric_name_upper, (
-            f"Incorrect metric name capitalization. "
-            f"Expected: {expected_metric_name_upper}, Actual: {item['metric']['metricName']}"
-        )
-        assert (
-            item["metric"]["model"] == model.name
-        ), f"Incorrect model name. Expected: {model.name}, Actual: {item['metric']['model']}"
-        assert (
-            item["metric"]["namespace"] == namespace.name
-        ), f"Incorrect namespace. Expected: {namespace.name}, Actual: {item['metric']['namespace']}"
-        expected_pod_name = get_trustyai_pod(namespace=namespace).name
-        assert (
-            item["metric"]["pod"] == expected_pod_name
-        ), f"Incorrect pod name. Expected: {expected_pod_name}, Actual: {item['metric']['pod']}"
-        assert (
-            item["metric"]["request"] != ""
-        ), "Request is empty"  # TODO: Try to find a way to get the requestId for this
-        assert (
-            item["metric"]["service"] == TRUSTYAI_SERVICE
-        ), f"Incorrect service name. Expected: {TRUSTYAI_SERVICE}, Actual: {item['metric']['service']}"
-        assert item["value"] != "", "Value is empty"
+
+    # Find the item corresponding to the specified model
+    model_data = next((item for item in result["data"]["result"] if item["metric"]["model"] == model.name), None)
+
+    assert model_data is not None, f"No data found for model: {model.name}"
+
+    expected_metric_name = f"trustyai_{metric_name.lower()}"
+    assert (
+        model_data["metric"]["__name__"] == expected_metric_name
+    ), f"Incorrect metric name. Expected: {expected_metric_name}, Actual: {model_data['metric']['__name__']}"
+    assert model_data["metric"]["batch_size"] != "", "Batch size is empty"
+    assert (
+        model_data["metric"]["job"] == TRUSTYAI_SERVICE
+    ), f"Incorrect job name. Expected: {TRUSTYAI_SERVICE}, Actual: {model_data['metric']['job']}"
+
+    expected_metric_name_upper = metric_name.upper()
+    assert model_data["metric"]["metricName"] == expected_metric_name_upper, (
+        f"Incorrect metric name capitalization. "
+        f"Expected: {expected_metric_name_upper}, Actual: {model_data['metric']['metricName']}"
+    )
+    assert (
+        model_data["metric"]["model"] == model.name
+    ), f"Incorrect model name. Expected: {model.name}, Actual: {model_data['metric']['model']}"
+    assert model_data["metric"]["namespace"] == namespace.name, (
+        f"Incorrect namespace. " f"Expected: {namespace.name}, Actual: {model_data['metric']['namespace']}"
+    )
+
+    expected_pod_name = get_trustyai_pod(namespace=namespace).name
+    assert (
+        model_data["metric"]["pod"] == expected_pod_name
+    ), f"Incorrect pod name. Expected: {expected_pod_name}, Actual: {model_data['metric']['pod']}"
+    assert (
+        model_data["metric"]["request"] != ""
+    ), "Request is empty"  # TODO: Try to find a way to get the requestId for this
+    assert (
+        model_data["metric"]["service"] == TRUSTYAI_SERVICE
+    ), f"Incorrect service name. Expected: {TRUSTYAI_SERVICE}, Actual: {model_data['metric']['service']}"
+    assert model_data["value"] != "", "Value is empty"
 
 
 def get_prometheus_token(duration="1800s"):

@@ -4,14 +4,12 @@ from ocp_resources.configmap import ConfigMap
 from ocp_resources.namespace import Namespace
 from ocp_resources.resource import get_client
 from ocp_resources.service_account import ServiceAccount
+from ocp_resources.trustyai_service import TrustyAIService
 
-from trustyai_tests.resources.storage.minio_pod import MinioPod
-from trustyai_tests.resources.storage.minio_secret import MinioSecret
-from trustyai_tests.resources.storage.minio_service import MinioService
-from trustyai_tests.resources.trustyai_service import TrustyAIService
-from trustyai_tests.constants import (
+from trustyai_tests.tests.constants import (
     TRUSTYAI_SERVICE,
 )
+from trustyai_tests.tests.minio import MinioSecret, MinioPod, MinioService
 
 
 @pytest.fixture(scope="session")
@@ -68,15 +66,12 @@ def trustyai_service(
     user_workload_monitoring_config,
 ):
     with TrustyAIService(
+        client=client,
         name=TRUSTYAI_SERVICE,
         namespace=model_namespace.name,
-        storage_format="PVC",
-        storage_folder="/inputs",
-        storage_size="1Gi",
-        data_filename="data.csv",
-        data_format="CSV",
-        metrics_schedule_interval="5s",
-        client=client,
+        storage={"format": "PVC", "folder": "/inputs", "size": "1Gi"},
+        data={"filename": "data.csv", "format": "CSV"},
+        metrics={"schedule": "5s"},
     ) as trusty:
         yield trusty
 

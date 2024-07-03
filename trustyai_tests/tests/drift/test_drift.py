@@ -7,8 +7,9 @@ from trustyai_tests.tests.utils import (
     verify_metric_request,
     verify_metric_scheduling,
     upload_data_to_trustyai_service,
+    wait_for_model_pods_registered,
 )
-from trustyai_tests.constants import (
+from trustyai_tests.tests.constants import (
     MODEL_DATA_PATH,
 )
 
@@ -27,6 +28,8 @@ class TestDriftMetrics:
     """
 
     def test_gaussian_credit_model_metadata(self, model_namespace, trustyai_service, gaussian_credit_model):
+        wait_for_model_pods_registered(namespace=model_namespace)
+
         path = f"{MODEL_DATA_PATH}/{gaussian_credit_model.name}"
 
         send_data_to_inference_service(

@@ -1,3 +1,4 @@
+from trustyai_tests.tests.constants import MODEL_DATA_PATH
 from trustyai_tests.tests.metrics import get_metric_endpoint, Metric
 from trustyai_tests.tests.utils import (
     send_data_to_inference_service,
@@ -6,8 +7,8 @@ from trustyai_tests.tests.utils import (
     verify_metric_scheduling,
     apply_trustyai_name_mappings,
     verify_trustyai_metric_prometheus,
+    wait_for_model_pods_registered,
 )
-from trustyai_tests.constants import MODEL_DATA_PATH
 
 
 IS_MALE_IDENTIFYING = "Is Male-Identifying?"
@@ -28,118 +29,128 @@ class TestFairnessMetrics:
         4.3. Verify that the metric has reached Prometheus.
     """
 
-    def test_loan_model_metadata(self, model_namespace, trustyai_service, onnx_loan_model_alpha):
-        input_data_path = f"{MODEL_DATA_PATH}/{onnx_loan_model_alpha.name}"
-        send_data_to_inference_service(
-            inference_service=onnx_loan_model_alpha,
-            namespace=model_namespace,
-            data_path=input_data_path,
-        )
+    def test_loan_model_metadata(self, model_namespace, trustyai_service, onnx_loan_model_alpha, onnx_loan_model_beta):
+        wait_for_model_pods_registered(namespace=model_namespace)
 
-        apply_trustyai_name_mappings(
-            namespace=model_namespace,
-            inference_service=onnx_loan_model_alpha,
-            input_mappings={
-                "customer_data_input-0": "Number of Children",
-                "customer_data_input-1": "Total Income",
-                "customer_data_input-2": "Number of Total Family Members",
-                "customer_data_input-3": IS_MALE_IDENTIFYING,
-                "customer_data_input-4": "Owns Car?",
-                "customer_data_input-5": "Owns Realty?",
-                "customer_data_input-6": "Is Partnered?",
-                "customer_data_input-7": "Is Employed?",
-                "customer_data_input-8": "Live with Parents?",
-                "customer_data_input-9": "Age",
-                "customer_data_input-10": "Length of Employment?",
-            },
-            output_mappings={"predict": WILL_DEFAULT},
-        )
+        input_data_path = f"{MODEL_DATA_PATH}/loan-nn-onnx"
 
-        verify_trustyai_model_metadata(
-            namespace=model_namespace,
-            model=onnx_loan_model_alpha,
-            data_path=input_data_path,
-            expected_percentage_observations=0.3,
-        )
+        for model in [onnx_loan_model_alpha, onnx_loan_model_beta]:
+            send_data_to_inference_service(
+                inference_service=model,
+                namespace=model_namespace,
+                data_path=input_data_path,
+            )
 
-    def test_request_spd(self, model_namespace, trustyai_service, onnx_loan_model_alpha):
-        verify_metric_request(
-            namespace=model_namespace,
-            model=onnx_loan_model_alpha,
-            endpoint=get_metric_endpoint(metric=Metric.SPD),
-            expected_metric_name=Metric.SPD.value.upper(),
-            json_data={
-                "modelId": onnx_loan_model_alpha.name,
-                "protectedAttribute": IS_MALE_IDENTIFYING,
-                "privilegedAttribute": 1.0,
-                "unprivilegedAttribute": 0.0,
-                "outcomeName": WILL_DEFAULT,
-                "favorableOutcome": 0,
-                "batchSize": 5000,
-            },
-        )
+            apply_trustyai_name_mappings(
+                namespace=model_namespace,
+                inference_service=model,
+                input_mappings={
+                    "customer_data_input-0": "Number of Children",
+                    "customer_data_input-1": "Total Income",
+                    "customer_data_input-2": "Number of Total Family Members",
+                    "customer_data_input-3": IS_MALE_IDENTIFYING,
+                    "customer_data_input-4": "Owns Car?",
+                    "customer_data_input-5": "Owns Realty?",
+                    "customer_data_input-6": "Is Partnered?",
+                    "customer_data_input-7": "Is Employed?",
+                    "customer_data_input-8": "Live with Parents?",
+                    "customer_data_input-9": "Age",
+                    "customer_data_input-10": "Length of Employment?",
+                },
+                output_mappings={"predict": WILL_DEFAULT},
+            )
 
-    def test_schedule_spd(self, model_namespace, trustyai_service, onnx_loan_model_alpha):
-        verify_metric_scheduling(
-            namespace=model_namespace,
-            model=onnx_loan_model_alpha,
-            endpoint=get_metric_endpoint(metric=Metric.SPD, schedule=True),
-            json_data={
-                "modelId": onnx_loan_model_alpha.name,
-                "protectedAttribute": IS_MALE_IDENTIFYING,
-                "privilegedAttribute": 1.0,
-                "unprivilegedAttribute": 0.0,
-                "outcomeName": WILL_DEFAULT,
-                "favorableOutcome": 0,
-                "batchSize": 5000,
-            },
-        )
+            verify_trustyai_model_metadata(
+                namespace=model_namespace,
+                model=model,
+                data_path=input_data_path,
+                expected_percentage_observations=0.3,
+            )
 
-    def test_spd_prometheus_query(self, model_namespace, onnx_loan_model_alpha):
-        verify_trustyai_metric_prometheus(
-            namespace=model_namespace,
-            model=onnx_loan_model_alpha,
-            prometheus_query=f"trustyai_{Metric.SPD.value}" f'{{namespace="{model_namespace.name}"}}',
-            metric_name=Metric.SPD.value,
-        )
+    def test_request_spd(self, model_namespace, trustyai_service, onnx_loan_model_alpha, onnx_loan_model_beta):
+        for model in [onnx_loan_model_alpha, onnx_loan_model_beta]:
+            verify_metric_request(
+                namespace=model_namespace,
+                model=model,
+                endpoint=get_metric_endpoint(metric=Metric.SPD),
+                expected_metric_name=Metric.SPD.value.upper(),
+                json_data={
+                    "modelId": model.name,
+                    "protectedAttribute": IS_MALE_IDENTIFYING,
+                    "privilegedAttribute": 1.0,
+                    "unprivilegedAttribute": 0.0,
+                    "outcomeName": WILL_DEFAULT,
+                    "favorableOutcome": 0,
+                    "batchSize": 5000,
+                },
+            )
 
-    def test_request_dir(self, model_namespace, trustyai_service, onnx_loan_model_alpha):
-        verify_metric_request(
-            namespace=model_namespace,
-            model=onnx_loan_model_alpha,
-            endpoint=get_metric_endpoint(metric=Metric.DIR),
-            expected_metric_name=Metric.DIR.value.upper(),
-            json_data={
-                "modelId": onnx_loan_model_alpha.name,
-                "protectedAttribute": IS_MALE_IDENTIFYING,
-                "privilegedAttribute": 1.0,
-                "unprivilegedAttribute": 0.0,
-                "outcomeName": WILL_DEFAULT,
-                "favorableOutcome": 0,
-                "batchSize": 5000,
-            },
-        )
+    def test_schedule_spd(self, model_namespace, trustyai_service, onnx_loan_model_alpha, onnx_loan_model_beta):
+        for model in [onnx_loan_model_alpha, onnx_loan_model_beta]:
+            verify_metric_scheduling(
+                namespace=model_namespace,
+                model=model,
+                endpoint=get_metric_endpoint(metric=Metric.SPD, schedule=True),
+                json_data={
+                    "modelId": model.name,
+                    "protectedAttribute": IS_MALE_IDENTIFYING,
+                    "privilegedAttribute": 1.0,
+                    "unprivilegedAttribute": 0.0,
+                    "outcomeName": WILL_DEFAULT,
+                    "favorableOutcome": 0,
+                    "batchSize": 5000,
+                },
+            )
 
-    def test_schedule_dir(self, model_namespace, trustyai_service, onnx_loan_model_alpha):
-        verify_metric_scheduling(
-            namespace=model_namespace,
-            model=onnx_loan_model_alpha,
-            endpoint=get_metric_endpoint(metric=Metric.DIR, schedule=True),
-            json_data={
-                "modelId": onnx_loan_model_alpha.name,
-                "protectedAttribute": IS_MALE_IDENTIFYING,
-                "privilegedAttribute": 1.0,
-                "unprivilegedAttribute": 0.0,
-                "outcomeName": WILL_DEFAULT,
-                "favorableOutcome": 0,
-                "batchSize": 5000,
-            },
-        )
+    def test_spd_prometheus_query(self, model_namespace, onnx_loan_model_alpha, onnx_loan_model_beta):
+        for model in [onnx_loan_model_alpha, onnx_loan_model_beta]:
+            verify_trustyai_metric_prometheus(
+                namespace=model_namespace,
+                model=model,
+                prometheus_query=f"trustyai_{Metric.SPD.value}" f'{{namespace="{model_namespace.name}"}}',
+                metric_name=Metric.SPD.value,
+            )
 
-    def test_dir_prometheus_query(self, model_namespace, onnx_loan_model_alpha):
-        verify_trustyai_metric_prometheus(
-            namespace=model_namespace,
-            model=onnx_loan_model_alpha,
-            prometheus_query=f"trustyai_{Metric.DIR.value}" f'{{namespace="{model_namespace.name}"}}',
-            metric_name=Metric.DIR.value,
-        )
+    def test_request_dir(self, model_namespace, trustyai_service, onnx_loan_model_alpha, onnx_loan_model_beta):
+        for model in [onnx_loan_model_alpha, onnx_loan_model_beta]:
+            verify_metric_request(
+                namespace=model_namespace,
+                model=model,
+                endpoint=get_metric_endpoint(metric=Metric.DIR),
+                expected_metric_name=Metric.DIR.value.upper(),
+                json_data={
+                    "modelId": model.name,
+                    "protectedAttribute": IS_MALE_IDENTIFYING,
+                    "privilegedAttribute": 1.0,
+                    "unprivilegedAttribute": 0.0,
+                    "outcomeName": WILL_DEFAULT,
+                    "favorableOutcome": 0,
+                    "batchSize": 5000,
+                },
+            )
+
+    def test_schedule_dir(self, model_namespace, trustyai_service, onnx_loan_model_alpha, onnx_loan_model_beta):
+        for model in [onnx_loan_model_alpha, onnx_loan_model_beta]:
+            verify_metric_scheduling(
+                namespace=model_namespace,
+                model=model,
+                endpoint=get_metric_endpoint(metric=Metric.DIR, schedule=True),
+                json_data={
+                    "modelId": model.name,
+                    "protectedAttribute": IS_MALE_IDENTIFYING,
+                    "privilegedAttribute": 1.0,
+                    "unprivilegedAttribute": 0.0,
+                    "outcomeName": WILL_DEFAULT,
+                    "favorableOutcome": 0,
+                    "batchSize": 5000,
+                },
+            )
+
+    def test_dir_prometheus_query(self, model_namespace, onnx_loan_model_alpha, onnx_loan_model_beta):
+        for model in [onnx_loan_model_alpha, onnx_loan_model_beta]:
+            verify_trustyai_metric_prometheus(
+                namespace=model_namespace,
+                model=model,
+                prometheus_query=f"trustyai_{Metric.DIR.value}" f'{{namespace="{model_namespace.name}"}}',
+                metric_name=Metric.DIR.value,
+            )
