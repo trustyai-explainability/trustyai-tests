@@ -3,7 +3,6 @@ from ocp_resources.inference_service import InferenceService
 from ocp_resources.serving_runtime import ServingRuntime
 
 from trustyai_tests.tests.constants import KSERVE_API_GROUP
-from trustyai_tests.tests.utils import wait_for_model_pods_registered
 
 SKLEARN = "sklearn"
 XGBOOST = "xgboost"
@@ -73,5 +72,4 @@ def gaussian_credit_model(client, model_namespace, minio_data_connection, mlserv
         },
         annotations={f"{KSERVE_API_GROUP}/deploymentMode": "ModelMesh"},
     ) as inference_service:
-        wait_for_model_pods_registered(client=client, namespace=model_namespace)
         yield inference_service

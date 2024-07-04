@@ -1,5 +1,5 @@
 import http
-from trustyai_tests.tests.drift.utils import get_drift_metric_endpoint, DriftMetrics
+from trustyai_tests.tests.metrics import Metric, get_metric_endpoint
 from trustyai_tests.tests.utils import (
     verify_trustyai_model_metadata,
     send_data_to_inference_service,
@@ -7,6 +7,7 @@ from trustyai_tests.tests.utils import (
     verify_metric_request,
     verify_metric_scheduling,
     upload_data_to_trustyai_service,
+    wait_for_model_pods_registered,
 )
 from trustyai_tests.tests.constants import (
     MODEL_DATA_PATH,
@@ -27,6 +28,8 @@ class TestDriftMetrics:
     """
 
     def test_gaussian_credit_model_metadata(self, model_namespace, trustyai_service, gaussian_credit_model):
+        wait_for_model_pods_registered(namespace=model_namespace)
+
         path = f"{MODEL_DATA_PATH}/{gaussian_credit_model.name}"
 
         send_data_to_inference_service(
@@ -52,95 +55,98 @@ class TestDriftMetrics:
         verify_metric_request(
             namespace=model_namespace,
             model=gaussian_credit_model,
-            endpoint=get_drift_metric_endpoint(metric=DriftMetrics.TRUSTYAI_MEANSHIFT.value),
-            expected_metric_name=DriftMetrics.TRUSTYAI_MEANSHIFT.value.upper(),
+            endpoint=get_metric_endpoint(metric=Metric.MEANSHIFT),
+            expected_metric_name=Metric.MEANSHIFT.value.upper(),
+            json_data={"modelId": gaussian_credit_model.name, "referenceTag": "TRAINING"},
         )
 
     def test_schedule_meanshift(self, model_namespace, trustyai_service, gaussian_credit_model):
         verify_metric_scheduling(
             namespace=model_namespace,
             model=gaussian_credit_model,
-            endpoint=get_drift_metric_endpoint(metric=DriftMetrics.TRUSTYAI_MEANSHIFT.value, schedule=True),
-            expected_metric_name=DriftMetrics.TRUSTYAI_MEANSHIFT.value.upper(),
+            endpoint=get_metric_endpoint(metric=Metric.MEANSHIFT, schedule=True),
+            json_data={"modelId": gaussian_credit_model.name, "referenceTag": "TRAINING"},
         )
 
     def test_meanshift_prometheus_query(self, model_namespace, gaussian_credit_model):
         verify_trustyai_metric_prometheus(
             namespace=model_namespace,
             model=gaussian_credit_model,
-            prometheus_query=f'trustyai_{DriftMetrics.TRUSTYAI_MEANSHIFT.value}{{namespace="{model_namespace.name}"}}',
-            metric_name=DriftMetrics.TRUSTYAI_MEANSHIFT.value,
+            prometheus_query=f'trustyai_{Metric.MEANSHIFT.value}{{namespace="{model_namespace.name}"}}',
+            metric_name=Metric.MEANSHIFT.value,
         )
 
     def test_request_fouriermmd(self, model_namespace, trustyai_service, gaussian_credit_model):
         verify_metric_request(
             namespace=model_namespace,
             model=gaussian_credit_model,
-            endpoint=get_drift_metric_endpoint(metric=DriftMetrics.TRUSTYAI_FOURIERMMD.value),
-            expected_metric_name=DriftMetrics.TRUSTYAI_FOURIERMMD.value.upper(),
+            endpoint=get_metric_endpoint(metric=Metric.FOURIERMMD),
+            expected_metric_name=Metric.FOURIERMMD.value.upper(),
+            json_data={"modelId": gaussian_credit_model.name, "referenceTag": "TRAINING"},
         )
 
     def test_schedule_fouriermmd(self, model_namespace, trustyai_service, gaussian_credit_model):
         verify_metric_scheduling(
             namespace=model_namespace,
             model=gaussian_credit_model,
-            endpoint=get_drift_metric_endpoint(metric=DriftMetrics.TRUSTYAI_FOURIERMMD.value, schedule=True),
-            expected_metric_name=DriftMetrics.TRUSTYAI_FOURIERMMD.value.upper(),
+            endpoint=get_metric_endpoint(metric=Metric.FOURIERMMD, schedule=True),
+            json_data={"modelId": gaussian_credit_model.name, "referenceTag": "TRAINING"},
         )
 
     def test_fouriermmd_prometheus_query(self, model_namespace, gaussian_credit_model):
         verify_trustyai_metric_prometheus(
             namespace=model_namespace,
             model=gaussian_credit_model,
-            prometheus_query=f'trustyai_{DriftMetrics.TRUSTYAI_FOURIERMMD.value}{{namespace="{model_namespace.name}"}}',
-            metric_name=DriftMetrics.TRUSTYAI_FOURIERMMD.value,
+            prometheus_query=f'trustyai_{Metric.FOURIERMMD.value}{{namespace="{model_namespace.name}"}}',
+            metric_name=Metric.FOURIERMMD.value,
         )
 
     def test_request_kstest(self, model_namespace, trustyai_service, gaussian_credit_model):
         verify_metric_request(
             namespace=model_namespace,
             model=gaussian_credit_model,
-            endpoint=get_drift_metric_endpoint(metric=DriftMetrics.TRUSTYAI_KSTEST.value),
-            expected_metric_name=DriftMetrics.TRUSTYAI_KSTEST.value.upper(),
+            endpoint=get_metric_endpoint(metric=Metric.KSTEST),
+            expected_metric_name=Metric.KSTEST.value.upper(),
+            json_data={"modelId": gaussian_credit_model.name, "referenceTag": "TRAINING"},
         )
 
     def test_schedule_kstest_scheduling_request(self, model_namespace, trustyai_service, gaussian_credit_model):
         verify_metric_scheduling(
             namespace=model_namespace,
             model=gaussian_credit_model,
-            endpoint=get_drift_metric_endpoint(metric=DriftMetrics.TRUSTYAI_KSTEST.value, schedule=True),
-            expected_metric_name=DriftMetrics.TRUSTYAI_KSTEST.value.upper(),
+            endpoint=get_metric_endpoint(metric=Metric.KSTEST, schedule=True),
+            json_data={"modelId": gaussian_credit_model.name, "referenceTag": "TRAINING"},
         )
 
     def test_kstest_prometheus_query(self, model_namespace, gaussian_credit_model):
         verify_trustyai_metric_prometheus(
             namespace=model_namespace,
             model=gaussian_credit_model,
-            prometheus_query=f'trustyai_{DriftMetrics.TRUSTYAI_KSTEST.value}{{namespace="{model_namespace.name}"}}',
-            metric_name=DriftMetrics.TRUSTYAI_KSTEST.value,
+            prometheus_query=f'trustyai_{Metric.KSTEST.value}{{namespace="{model_namespace.name}"}}',
+            metric_name=Metric.KSTEST.value,
         )
 
     def test_request_approxkstest(self, model_namespace, trustyai_service, gaussian_credit_model):
         verify_metric_request(
             namespace=model_namespace,
             model=gaussian_credit_model,
-            endpoint=get_drift_metric_endpoint(metric=DriftMetrics.TRUSTYAI_APPROXKSTEST.value),
-            expected_metric_name=DriftMetrics.TRUSTYAI_APPROXKSTEST.value.upper(),
+            endpoint=get_metric_endpoint(metric=Metric.APPROXKSTEST),
+            expected_metric_name=Metric.APPROXKSTEST.value.upper(),
+            json_data={"modelId": gaussian_credit_model.name, "referenceTag": "TRAINING"},
         )
 
     def test_schedule_approxkstest(self, model_namespace, trustyai_service, gaussian_credit_model):
         verify_metric_scheduling(
             namespace=model_namespace,
             model=gaussian_credit_model,
-            endpoint=get_drift_metric_endpoint(metric=DriftMetrics.TRUSTYAI_APPROXKSTEST.value, schedule=True),
-            expected_metric_name=DriftMetrics.TRUSTYAI_APPROXKSTEST.value.upper(),
+            endpoint=get_metric_endpoint(metric=Metric.APPROXKSTEST, schedule=True),
+            json_data={"modelId": gaussian_credit_model.name, "referenceTag": "TRAINING"},
         )
 
     def test_approxkstest_prometheus_query(self, model_namespace, gaussian_credit_model):
         verify_trustyai_metric_prometheus(
             namespace=model_namespace,
             model=gaussian_credit_model,
-            prometheus_query=f"trustyai_{DriftMetrics.TRUSTYAI_APPROXKSTEST.value}"
-            f'{{namespace="{model_namespace.name}"}}',
-            metric_name=DriftMetrics.TRUSTYAI_APPROXKSTEST.value,
+            prometheus_query=f"trustyai_{Metric.APPROXKSTEST.value}" f'{{namespace="{model_namespace.name}"}}',
+            metric_name=Metric.APPROXKSTEST.value,
         )

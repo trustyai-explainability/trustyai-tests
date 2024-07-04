@@ -3,7 +3,6 @@ import pytest
 from ocp_resources.inference_service import InferenceService
 from ocp_resources.serving_runtime import ServingRuntime
 
-from trustyai_tests.tests.utils import wait_for_model_pods_registered
 from trustyai_tests.tests.constants import (
     OPENVINO_MODEL_FORMAT,
     KSERVE_API_GROUP,
@@ -79,5 +78,22 @@ def onnx_loan_model_alpha(client, model_namespace, minio_data_connection, ovms_r
         },
         annotations={f"{KSERVE_API_GROUP}/deploymentMode": "ModelMesh"},
     ) as inference_service:
-        wait_for_model_pods_registered(client=client, namespace=model_namespace)
+        yield inference_service
+
+
+@pytest.fixture(scope="class")
+def onnx_loan_model_beta(client, model_namespace, minio_data_connection, ovms_runtime):
+    with InferenceService(
+        client=client,
+        name="demo-loan-nn-onnx-beta",
+        namespace=model_namespace.name,
+        predictor={
+            "model": {
+                "modelFormat": {"name": ONNX},
+                "runtime": ovms_runtime.name,
+                "storage": {"key": minio_data_connection.name, "path": "onnx/loan_model_beta_august.onnx"},
+            }
+        },
+        annotations={f"{KSERVE_API_GROUP}/deploymentMode": "ModelMesh"},
+    ) as inference_service:
         yield inference_service
