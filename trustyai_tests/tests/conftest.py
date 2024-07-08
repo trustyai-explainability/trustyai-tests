@@ -8,6 +8,7 @@ from ocp_resources.trustyai_service import TrustyAIService
 
 from trustyai_tests.tests.constants import (
     TRUSTYAI_SERVICE,
+    MINIO_DATA_CONNECTION_NAME,
 )
 from trustyai_tests.tests.minio import MinioSecret, MinioPod, MinioService
 
@@ -103,7 +104,7 @@ def minio_pod(client, model_namespace):
 def minio_secret(client, model_namespace):
     with MinioSecret(
         client=client,
-        name="aws-connection-minio-data-connection",
+        name=MINIO_DATA_CONNECTION_NAME,
         namespace=model_namespace.name,
         # Dummy AWS values
         aws_access_key_id="VEhFQUNDRVNTS0VZ",
