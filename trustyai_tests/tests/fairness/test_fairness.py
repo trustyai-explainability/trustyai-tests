@@ -7,7 +7,7 @@ from trustyai_tests.tests.utils import (
     verify_metric_scheduling,
     apply_trustyai_name_mappings,
     verify_trustyai_metric_prometheus,
-    wait_for_model_pods_registered,
+    wait_for_modelmesh_pods_registered,
 )
 
 
@@ -57,7 +57,7 @@ class TestFairnessMetrics:
     """
 
     def test_loan_model_metadata(self, model_namespace, trustyai_service, onnx_loan_model_alpha, onnx_loan_model_beta):
-        wait_for_model_pods_registered(namespace=model_namespace)
+        wait_for_modelmesh_pods_registered(namespace=model_namespace)
 
         for model in [onnx_loan_model_alpha, onnx_loan_model_beta]:
             send_data_to_inference_service(

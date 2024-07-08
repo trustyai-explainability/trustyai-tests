@@ -11,7 +11,7 @@ from trustyai_tests.tests.constants import (
     MINIO_DATA_CONNECTION_NAME,
 )
 from trustyai_tests.tests.fairness.utils import deploy_namespace_with_minio
-from trustyai_tests.tests.utils import wait_for_model_pods_registered
+from trustyai_tests.tests.utils import wait_for_modelmesh_pods_registered
 
 ONNX = "onnx"
 OVMS = "ovms"
@@ -170,7 +170,7 @@ def onnx_loan_models_in_namespaces(model_namespaces_with_minio, ovms_runtimes_in
             annotations={f"{KSERVE_API_GROUP}/deploymentMode": "ModelMesh"},
         )
         inference_service.deploy()
-        wait_for_model_pods_registered(namespace=namespace)
+        wait_for_modelmesh_pods_registered(namespace=namespace)
         inference_services.append(inference_service)
     yield inference_services
     for inference_service in inference_services:

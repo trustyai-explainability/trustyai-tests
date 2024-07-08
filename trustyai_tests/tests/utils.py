@@ -169,8 +169,8 @@ def parse_input_data(data_path):
     )
 
 
-def wait_for_model_pods_registered(namespace):
-    """Wait for model pods to be registered by TrustyAIService"""
+def wait_for_modelmesh_pods_registered(namespace):
+    """Wait for modelmesh pods to be registered by TrustyAIService"""
     pods_with_env_var = False
     all_pods_running = False
     timeout = 60 * 10
