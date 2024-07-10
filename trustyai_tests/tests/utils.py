@@ -169,8 +169,8 @@ def parse_input_data(data_path):
     )
 
 
-def wait_for_model_pods_registered(namespace):
-    """Wait for model pods to be registered by TrustyAIService"""
+def wait_for_modelmesh_pods_registered(namespace):
+    """Wait for modelmesh pods to be registered by TrustyAIService"""
     pods_with_env_var = False
     all_pods_running = False
     timeout = 60 * 10
@@ -204,12 +204,19 @@ def wait_for_model_pods_registered(namespace):
             sleep(5)
 
 
-def send_data_to_inference_service(namespace, inference_service, data_path, max_retries=5, retry_delay=1):
+def send_data_to_inference_service(
+    namespace, inference_service, data_path, max_retries=5, retry_delay=1, num_batches=None
+):
     inference_route = Route(namespace=namespace.name, name=inference_service.name)
     token = get_ocp_token()
 
+    files_processed = 0
     for root, _, files in os.walk(data_path):
         for file_name in files:
+            if num_batches is not None and files_processed >= num_batches:
+                logger.info(f"Reached the specified number of batches ({num_batches}). Stopping processing.")
+                return
+
             file_path = os.path.join(root, file_name)
             with open(file_path, "r") as file:
                 data = file.read()
@@ -234,6 +241,8 @@ def send_data_to_inference_service(namespace, inference_service, data_path, max_
                 sleep(5)
             else:
                 logger.error(f"Maximum retries reached for file: {file_name}")
+
+            files_processed += 1
 
 
 def upload_data_to_trustyai_service(namespace, data_path):

@@ -9,3 +9,5 @@ TRUSTYAI_API_GROUP = "trustyai.opendatahub.io"
 OPENDATAHUB_IO = "opendatahub.io"
 
 MODEL_DATA_PATH = "./trustyai_tests/model_data"
+
+MINIO_DATA_CONNECTION_NAME = "aws-connection-minio-data-connection"
