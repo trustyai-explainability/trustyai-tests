@@ -3,6 +3,7 @@ import yaml
 from ocp_resources.configmap import ConfigMap
 from ocp_resources.namespace import Namespace
 from ocp_resources.resource import get_client
+from ocp_resources.role_binding import RoleBinding
 from ocp_resources.service_account import ServiceAccount
 from ocp_resources.trustyai_service import TrustyAIService
 
@@ -27,6 +28,18 @@ def model_namespace(client):
         delete_timeout=600,
     ) as ns:
         ns.wait_for_status(status=Namespace.Status.ACTIVE, timeout=120)
+        user_name = "test-user"
+        service_account = ServiceAccount(name=user_name, namespace=ns.name)
+        service_account.deploy()
+        role_binding = RoleBinding(
+            name="test-user-view",
+            namespace=ns.name,
+            subjects_kind="ServiceAccount",
+            subjects_name=user_name,
+            role_ref_kind="ClusterRole",
+            role_ref_name="view",
+        )
+        role_binding.deploy()
         yield ns
 
 

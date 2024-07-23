@@ -46,8 +46,8 @@ class TrustyAIModelMetadata:
         self.num_features = num_features
 
 
-def get_ocp_token():
-    return subprocess.check_output(["oc", "whoami", "-t"]).decode().strip()
+def get_ocp_token(namespace):
+    return subprocess.check_output(["oc", "create", "token", "test-user", "-n", namespace.name]).decode().strip()
 
 
 def get_trustyai_pod(namespace):
@@ -72,7 +72,7 @@ def get_trustyai_model_metadata(namespace):
 
 def send_trustyai_service_request(namespace, endpoint, method, data=None, json=None):
     trustyai_service_route = get_trustyai_service_route(namespace=namespace)
-    token = get_ocp_token()
+    token = get_ocp_token(namespace=namespace)
 
     url = f"https://{trustyai_service_route.host}{endpoint}"
     headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
@@ -208,7 +208,7 @@ def send_data_to_inference_service(
     namespace, inference_service, data_path, max_retries=5, retry_delay=1, num_batches=None
 ):
     inference_route = Route(namespace=namespace.name, name=inference_service.name)
-    token = get_ocp_token()
+    token = get_ocp_token(namespace=namespace)
 
     files_processed = 0
     for root, _, files in os.walk(data_path):
