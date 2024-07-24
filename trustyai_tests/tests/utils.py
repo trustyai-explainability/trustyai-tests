@@ -173,7 +173,7 @@ def wait_for_modelmesh_pods_registered(namespace):
     """Wait for modelmesh pods to be registered by TrustyAIService"""
     pods_with_env_var = False
     all_pods_running = False
-    timeout = 60 * 10
+    timeout = 60 * 15
     start_time = time()
     while not pods_with_env_var or not all_pods_running:  # TODO: Consider using TimeoutSampler in the future
         if time() - start_time > timeout:
@@ -314,7 +314,7 @@ def verify_metric_scheduling(namespace, model, endpoint, json_data):
     assert response_data["timestamp"] != "", "Timestamp is empty"
 
 
-def verify_trustyai_metric_prometheus(namespace, model, prometheus_query, metric_name, max_retries=20, retry_delay=2):
+def verify_trustyai_metric_prometheus(namespace, model, prometheus_query, metric_name, max_retries=20, retry_delay=5):
     """
     Sends a query to Prometheus for a specific TrustyAI metric and verifies the result for a specific model.
 

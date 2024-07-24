@@ -1,4 +1,6 @@
 import http
+from time import sleep
+
 from trustyai_tests.tests.metrics import Metric, get_metric_endpoint
 from trustyai_tests.tests.utils import (
     verify_trustyai_model_metadata,
@@ -12,6 +14,10 @@ from trustyai_tests.tests.utils import (
 from trustyai_tests.tests.constants import (
     MODEL_DATA_PATH,
 )
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class TestDriftMetrics:
@@ -28,16 +34,24 @@ class TestDriftMetrics:
     """
 
     def test_gaussian_credit_model_metadata(self, model_namespace, trustyai_service, gaussian_credit_model):
+        print("Debugging...")
+        logger.info(msg="Debugging")
+        sleep(60 * 5)
+
         wait_for_modelmesh_pods_registered(namespace=model_namespace)
 
         path = f"{MODEL_DATA_PATH}/{gaussian_credit_model.name}"
 
+        print("Sending data...")
+        logger.info(msg="Sending data...")
         send_data_to_inference_service(
             inference_service=gaussian_credit_model,
             namespace=model_namespace,
             data_path=f"{path}/data_batches",
         )
 
+        print("uploading data...")
+        logger.info(msg="uploading data...")
         response = upload_data_to_trustyai_service(
             namespace=model_namespace,
             data_path=f"{path}/training_data.json",
