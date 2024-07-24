@@ -87,6 +87,9 @@ def onnx_loan_model_alpha(client, model_namespace, minio_data_connection, ovms_r
         },
         annotations={f"{KSERVE_API_GROUP}/deploymentMode": "ModelMesh"},
     ) as inference_service:
+        inference_service.wait_for_condition(
+            condition=inference_service.Condition.READY, status=inference_service.Condition.Status.TRUE, timeout=5 * 60
+        )
         yield inference_service
 
 
@@ -105,6 +108,9 @@ def onnx_loan_model_beta(client, model_namespace, minio_data_connection, ovms_ru
         },
         annotations={f"{KSERVE_API_GROUP}/deploymentMode": "ModelMesh"},
     ) as inference_service:
+        inference_service.wait_for_condition(
+            condition=inference_service.Condition.READY, status=inference_service.Condition.Status.TRUE, timeout=5 * 60
+        )
         yield inference_service
 
 
