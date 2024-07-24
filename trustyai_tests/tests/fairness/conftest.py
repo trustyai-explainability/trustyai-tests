@@ -112,7 +112,7 @@ def onnx_loan_model_beta(client, model_namespace, minio_data_connection, ovms_ru
 def model_namespaces_with_minio():
     namespaces = []
 
-    for i in range(3):
+    for i in range(2):
         namespace = deploy_namespace_with_minio(name=f"test-namespace-{i}")
         namespaces.append(namespace)
 
