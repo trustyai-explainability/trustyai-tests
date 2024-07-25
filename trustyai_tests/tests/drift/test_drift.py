@@ -14,10 +14,6 @@ from trustyai_tests.tests.constants import (
     MODEL_DATA_PATH,
 )
 
-import logging
-
-logger = logging.getLogger(__name__)
-
 
 class TestDriftMetrics:
     """
