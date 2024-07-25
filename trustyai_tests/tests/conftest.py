@@ -19,6 +19,17 @@ def client():
     yield get_client()
 
 
+@pytest.fixture(autouse=True, scope="session")
+def modelmesh_configmap():
+    opendatahub_ns = Namespace(name="opendatahub", ensure_exists=True)
+    with ConfigMap(
+        name="model-serving-config",
+        namespace=opendatahub_ns.name,
+        data={"config.yaml": yaml.dump({"podsPerRuntime": 1})},
+    ):
+        yield
+
+
 @pytest.fixture(scope="class")
 def model_namespace(client):
     with Namespace(
