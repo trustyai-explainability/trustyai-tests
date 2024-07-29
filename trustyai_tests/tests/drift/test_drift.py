@@ -49,7 +49,6 @@ class TestDriftMetrics:
             namespace=model_namespace,
             model=gaussian_credit_model,
             data_path=path,
-            expected_percentage_observations=0.3,
         )
 
     def test_request_meanshift(self, model_namespace, trustyai_service, gaussian_credit_model):

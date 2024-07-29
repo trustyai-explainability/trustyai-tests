@@ -77,7 +77,6 @@ class TestFairnessMetrics:
                 namespace=model_namespace,
                 model=model,
                 data_path=INPUT_DATA_PATH,
-                expected_percentage_observations=0.3,
             )
 
     def test_request_spd(self, model_namespace, trustyai_service, onnx_loan_model_alpha, onnx_loan_model_beta):
@@ -170,7 +169,6 @@ class TestMultipleNamespaces:
                 namespace=namespace,
                 model=inference_service,
                 data_path=INPUT_DATA_PATH,
-                expected_percentage_observations=0.1,
             )
 
             for metric in (Metric.SPD, Metric.DIR):

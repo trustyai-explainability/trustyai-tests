@@ -84,7 +84,7 @@ def send_trustyai_service_request(namespace, endpoint, method, data=None, json=N
     raise ValueError(f"Unsupported HTTP method: {method}")
 
 
-def verify_trustyai_model_metadata(namespace, model, data_path, expected_percentage_observations):
+def verify_trustyai_model_metadata(namespace, model, data_path):
     response = get_trustyai_model_metadata(namespace=namespace)
     assert (
         response.status_code == http.HTTPStatus.OK
@@ -98,9 +98,11 @@ def verify_trustyai_model_metadata(namespace, model, data_path, expected_percent
         model_metadata.model_name == model.name
     ), f"Expected model name '{model.name}', but got '{model_metadata.model_name}'"
     assert (
+        model_metadata.num_observations > 0
+    ), f"No observations registered by TrustyAIService, got {model_metadata.num_observations}"
+    assert (
         model_metadata.num_features == model_input_data.num_features
     ), f"Expected number of features '{model_input_data.num_features}', but got '{model_metadata.num_features}'"
-    # TODO: assert number of observations and investigate why TrustyAI doens't register them sometimes.
 
 
 def parse_trustyai_model_metadata(model_metadata):
