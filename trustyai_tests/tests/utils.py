@@ -249,7 +249,6 @@ def send_data_to_inference_service(
                     logger.error(f"Error sending data for file: {file_name}. Error: {str(e)}")
                     retry_count += 1
                     if retry_count < max_retries:
-                        logging.info(f"Retrying in {retry_delay} second(s)...")
                         sleep(retry_delay)
             else:
                 logger.error(f"Maximum retries reached for file: {file_name}")
