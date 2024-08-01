@@ -11,3 +11,5 @@ OPENDATAHUB_IO = "opendatahub.io"
 MODEL_DATA_PATH = "./trustyai_tests/model_data"
 
 MINIO_DATA_CONNECTION_NAME = "aws-connection-minio-data-connection"
+
+KNATIVE_API_GROUP = "serving.knative.dev"

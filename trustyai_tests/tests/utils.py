@@ -5,6 +5,8 @@ import os
 import subprocess
 from time import time, sleep
 
+import joblib
+
 import kubernetes
 import requests
 from ocp_resources.pod import Pod
@@ -13,6 +15,8 @@ from ocp_utilities.monitoring import Prometheus
 
 from trustyai_tests.tests.constants import (
     TRUSTYAI_SERVICE,
+    MODEL_DATA_PATH,
+    KNATIVE_API_GROUP
 )
 
 logger = logging.getLogger(__name__)
@@ -406,3 +410,77 @@ def apply_trustyai_name_mappings(namespace, inference_service, input_mappings, o
         namespace=namespace, endpoint="/info/names", method=http.HTTPMethod.POST, json=data
     )
     assert response.status_code == http.HTTPStatus.OK, f"Wrong status code: {response.status_code}"
+
+
+def get_kserve_route(model_namespace, model):
+    """
+    Gets the hostname of a model deployed on KServe.
+
+    :param model_namespace (str): Namespace where the model lives.
+    :param model (InferenceService): Name of model that is deployed.
+    """
+    try:
+        k8s_client = kubernetes.config.load_incluster_config()
+    except kubernetes.config.ConfigException:
+        k8s_client = kubernetes.config.load_kube_config()
+    dyn_client = kubernetes.dynamic.DynamicClient(
+            kubernetes.client.api_client.ApiClient(configuration=k8s_client)
+        )
+
+    route = Route(
+        namespace=model_namespace,
+        name=model,
+        client=dyn_client,
+        context="kind-kind",
+        api_group=KNATIVE_API_GROUP,
+        ensure_exists=True
+    )
+    return route.instance.status.url
+
+
+def verify_model_prediction(model_namespace, model):
+    """
+    Verifies output of KServe explainers' "predict" endpoint.
+
+    :param model_namespace (str): Namespace where the model lives.
+    :param model (InferenceService): Name of the predictor that is deployed
+    """
+    data = json.loads(f"{MODEL_DATA_PATH}/bank-inference_data.json")
+    service_hostname = get_kserve_route(model=model, model_namespace=model_namespace)
+    response = requests.post(
+        f"http://localhost:8080/v1/models/{model}:predict",
+        data=data,
+        headers={
+        "Host": service_hostname.status.url,
+        "Content-Type": "application/json",
+        },
+        timeout=10
+    )
+    assert response.status_code == http.HTTPStatus.OK
+    assert (list(response.json().keys()))[0] == "predictions", f"Unexpected type: {list(response.json().keys())[0]}"
+    assert len(response.json()["predictions"]) != 0, "Predictions is empty."
+
+
+def verify_saliency_explanation(model_namespace, model):
+    """
+    Verifies output of KServe explainers' "explain" endpoint.
+
+     param model_namespace (str): Namespace where model lives.
+    :param model (InferenceService): Name of explainer that is deployed
+    """
+    data = json.loads(f"{MODEL_DATA_PATH}/bank-inference_data.json")
+    service_hostname = get_kserve_route(model_namespace=model_namespace, model=model)
+    response = requests.post(
+        f"http://localhost:8080/v1/models/{model}:explain",
+        data=data,
+        headers={
+        "Host": service_hostname.status.url,
+        "Content-Type": "application/json",
+        },
+        timeout=10
+    )
+    assert response.status_code == http.HTTPStatus.OK
+    assert response.json()["type"] == "explanation", f"Unexpected type: {response.json()['type']}"
+    assert len(response.json()["saliences"]) != 0
+    for item in response.json()["saliencies"]["outputs-0"]:
+        assert list(item.keys()) == ["name", "score", "confidence"], f"Unexpected saliency results: {list(item.keys())}"
