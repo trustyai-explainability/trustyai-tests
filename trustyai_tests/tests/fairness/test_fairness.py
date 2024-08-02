@@ -80,7 +80,6 @@ class TestFairnessMetrics:
                 namespace=model_namespace,
                 model=model,
                 data_path=INPUT_DATA_PATH,
-                expected_percentage_observations=0.3,
             )
 
     def test_request_spd(self, model_namespace, trustyai_service, onnx_loan_model_alpha, onnx_loan_model_beta):
@@ -155,12 +154,13 @@ class TestMultipleNamespaces:
         ovms_runtimes_in_namespaces,
         onnx_loan_models_in_namespaces,
     ):
+        num_batches = 3
         for namespace, inference_service in zip(model_namespaces_with_minio, onnx_loan_models_in_namespaces):
             send_data_to_inference_service(
                 inference_service=inference_service,
                 namespace=namespace,
                 data_path=INPUT_DATA_PATH,
-                num_batches=3,
+                num_batches=num_batches,
             )
 
             apply_trustyai_name_mappings(
@@ -174,7 +174,7 @@ class TestMultipleNamespaces:
                 namespace=namespace,
                 model=inference_service,
                 data_path=INPUT_DATA_PATH,
-                expected_percentage_observations=0.1,
+                num_batches=num_batches,
             )
 
             for metric in (Metric.SPD, Metric.DIR):

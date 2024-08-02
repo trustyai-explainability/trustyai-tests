@@ -88,12 +88,13 @@ def send_trustyai_service_request(namespace, endpoint, method, data=None, json=N
     raise ValueError(f"Unsupported HTTP method: {method}")
 
 
-def verify_trustyai_model_metadata(namespace, model, data_path, expected_percentage_observations):
+def verify_trustyai_model_metadata(namespace, model, data_path, num_batches=None):
     response = get_trustyai_model_metadata(namespace=namespace)
     assert (
         response.status_code == http.HTTPStatus.OK
     ), f"Expected status code {http.HTTPStatus.OK}, but got {response.status_code}"
-    model_input_data = parse_input_data(data_path=data_path)
+
+    model_input_data = parse_input_data(data_path=data_path, num_batches=num_batches)
     model_metadata_list = parse_trustyai_model_metadata(model_metadata=response.content)
 
     model_metadata = next((m for m in model_metadata_list if m.model_name == model.name), None)
@@ -101,9 +102,9 @@ def verify_trustyai_model_metadata(namespace, model, data_path, expected_percent
     assert (
         model_metadata.model_name == model.name
     ), f"Expected model name '{model.name}', but got '{model_metadata.model_name}'"
-    assert model_metadata.num_observations > model_input_data.num_observations * expected_percentage_observations, (
-        f"Expected number of observations to be greater than "
-        f"{model_input_data.num_observations * expected_percentage_observations},"
+    assert model_metadata.num_observations == model_input_data.num_observations, (
+        f"Expected number of observations to be "
+        f"{model_input_data.num_observations},"
         f" but got {model_metadata.num_observations}"
     )
     assert (
@@ -140,30 +141,39 @@ def parse_trustyai_model_metadata(model_metadata):
     return model_metadata_list
 
 
-def parse_input_data(data_path):
+def parse_input_data(data_path, num_batches=None):
     total_observations = 0
     name = ""
     num_features = 0
     data_type = ""
+    processed_files = 0
 
-    for filename in os.listdir(data_path):
-        if filename.endswith(".json"):
-            file_path = os.path.join(data_path, filename)
+    for root, dirs, files in os.walk(data_path):
+        for filename in files:
+            if filename.endswith(".json"):
+                if num_batches is not None and processed_files >= num_batches:
+                    break
 
-            with open(file_path, "r") as file:
-                data = json.load(file)
+                file_path = os.path.join(root, filename)
 
-            # Check if "inputs" is directly available or nested inside "request"
-            inputs = data.get("inputs", data.get("request", {}).get("inputs"))
+                with open(file_path, "r") as file:
+                    data = json.load(file)
 
-            if inputs:
-                for input_data in inputs:
-                    name = name or input_data["name"]
-                    num_features = num_features or input_data["shape"][1]
-                    data_type = data_type or input_data["datatype"]
+                inputs = data.get("inputs", data.get("request", {}).get("inputs"))
 
-                    num_observations = input_data["shape"][0]
-                    total_observations += num_observations
+                if inputs:
+                    for input_data in inputs:
+                        name = name or input_data["name"]
+                        num_features = num_features or input_data["shape"][1]
+                        data_type = data_type or input_data["datatype"]
+
+                        num_observations = input_data["shape"][0]
+                        total_observations += num_observations
+
+                processed_files += 1
+
+        if num_batches is not None and processed_files >= num_batches:
+            break
 
     return ModelInputData(
         name=name,
@@ -177,7 +187,7 @@ def wait_for_modelmesh_pods_registered(namespace):
     """Wait for modelmesh pods to be registered by TrustyAIService"""
     pods_with_env_var = False
     all_pods_running = False
-    timeout = 60 * 10
+    timeout = 60 * 20
     start_time = time()
     while not pods_with_env_var or not all_pods_running:  # TODO: Consider using TimeoutSampler in the future
         if time() - start_time > timeout:
@@ -207,6 +217,8 @@ def wait_for_modelmesh_pods_registered(namespace):
         if not pods_with_env_var or not all_pods_running:
             sleep(5)
 
+    sleep(30)
+
 
 def send_data_to_inference_service(
     namespace, inference_service, data_path, max_retries=5, retry_delay=1, num_batches=None
@@ -222,6 +234,7 @@ def send_data_to_inference_service(
                 return
 
             file_path = os.path.join(root, file_name)
+
             with open(file_path, "r") as file:
                 data = file.read()
 
@@ -240,13 +253,12 @@ def send_data_to_inference_service(
                     logger.error(f"Error sending data for file: {file_name}. Error: {str(e)}")
                     retry_count += 1
                     if retry_count < max_retries:
-                        logger.info(f"Retrying in {retry_delay} second(s)...")
                         sleep(retry_delay)
-                sleep(5)
             else:
                 logger.error(f"Maximum retries reached for file: {file_name}")
 
             files_processed += 1
+            sleep(10)
 
 
 def upload_data_to_trustyai_service(namespace, data_path):
@@ -318,7 +330,7 @@ def verify_metric_scheduling(namespace, model, endpoint, json_data):
     assert response_data["timestamp"] != "", "Timestamp is empty"
 
 
-def verify_trustyai_metric_prometheus(namespace, model, prometheus_query, metric_name, max_retries=20, retry_delay=2):
+def verify_trustyai_metric_prometheus(namespace, model, prometheus_query, metric_name, max_retries=20, retry_delay=5):
     """
     Sends a query to Prometheus for a specific TrustyAI metric and verifies the result for a specific model.
 
