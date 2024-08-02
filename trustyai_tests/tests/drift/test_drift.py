@@ -1,5 +1,8 @@
 import http
 
+
+import pytest
+
 from trustyai_tests.tests.metrics import Metric, get_metric_endpoint
 from trustyai_tests.tests.utils import (
     verify_trustyai_model_metadata,
@@ -15,6 +18,7 @@ from trustyai_tests.tests.constants import (
 )
 
 
+@pytest.mark.openshift
 class TestDriftMetrics:
     """
     Verifies the different input data drift metrics available in TrustyAI.

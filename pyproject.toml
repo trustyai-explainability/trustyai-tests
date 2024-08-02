@@ -30,3 +30,9 @@ pre-commit = "^3.7.1"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+markers = [
+    "openshift: marks tests to be run in OpenShift clusters.",
+    "kubernetes: marks tests to be run in Kubernetes clusters."
+]

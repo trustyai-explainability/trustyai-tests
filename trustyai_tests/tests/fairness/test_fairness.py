@@ -1,3 +1,5 @@
+import pytest
+
 from trustyai_tests.tests.constants import MODEL_DATA_PATH
 from trustyai_tests.tests.metrics import get_metric_endpoint, Metric
 from trustyai_tests.tests.utils import (
@@ -42,6 +44,7 @@ def get_json_data(inference_service):
     }
 
 
+@pytest.mark.openshift
 class TestFairnessMetrics:
     """
     Verifies the different fairness metrics available in TrustyAI.
@@ -136,6 +139,7 @@ class TestFairnessMetrics:
             )
 
 
+@pytest.mark.openshift
 class TestMultipleNamespaces:
     """
     Tests that TrustyAI Operator can handle multiple namespaces.
