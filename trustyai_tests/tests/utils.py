@@ -5,19 +5,13 @@ import os
 import subprocess
 from time import time, sleep
 
-import joblib
-
 import kubernetes
 import requests
 from ocp_resources.pod import Pod
 from ocp_resources.route import Route
 from ocp_utilities.monitoring import Prometheus
 
-from trustyai_tests.tests.constants import (
-    TRUSTYAI_SERVICE,
-    MODEL_DATA_PATH,
-    KNATIVE_API_GROUP
-)
+from trustyai_tests.tests.constants import TRUSTYAI_SERVICE, MODEL_DATA_PATH, KNATIVE_API_GROUP
 
 logger = logging.getLogger(__name__)
 
@@ -436,8 +430,8 @@ def get_kserve_route(model_namespace, model):
     except kubernetes.config.ConfigException:
         k8s_client = kubernetes.config.load_kube_config()
     dyn_client = kubernetes.dynamic.DynamicClient(
-            kubernetes.client.api_client.ApiClient(configuration=k8s_client)
-        )
+        client=kubernetes.client.api_client.ApiClient(configuration=k8s_client)
+    )
 
     route = Route(
         namespace=model_namespace,
@@ -445,7 +439,7 @@ def get_kserve_route(model_namespace, model):
         client=dyn_client,
         context="kind-kind",
         api_group=KNATIVE_API_GROUP,
-        ensure_exists=True
+        ensure_exists=True,
     )
     return route.instance.status.url
 
@@ -463,10 +457,10 @@ def verify_model_prediction(model_namespace, model):
         f"http://localhost:8080/v1/models/{model}:predict",
         data=data,
         headers={
-        "Host": service_hostname.status.url,
-        "Content-Type": "application/json",
+            "Host": service_hostname.status.url,
+            "Content-Type": "application/json",
         },
-        timeout=10
+        timeout=10,
     )
     assert response.status_code == http.HTTPStatus.OK
     assert (list(response.json().keys()))[0] == "predictions", f"Unexpected type: {list(response.json().keys())[0]}"
@@ -486,10 +480,10 @@ def verify_saliency_explanation(model_namespace, model):
         f"http://localhost:8080/v1/models/{model}:explain",
         data=data,
         headers={
-        "Host": service_hostname.status.url,
-        "Content-Type": "application/json",
+            "Host": service_hostname.status.url,
+            "Content-Type": "application/json",
         },
-        timeout=10
+        timeout=10,
     )
     assert response.status_code == http.HTTPStatus.OK
     assert response.json()["type"] == "explanation", f"Unexpected type: {response.json()['type']}"
