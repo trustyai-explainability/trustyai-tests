@@ -7,11 +7,18 @@ from time import time, sleep
 
 import kubernetes
 import requests
+from ocp_resources.cluster_service_version import ClusterServiceVersion
 from ocp_resources.pod import Pod
 from ocp_resources.route import Route
 from ocp_utilities.monitoring import Prometheus
 
-from trustyai_tests.tests.constants import TRUSTYAI_SERVICE, MODEL_DATA_PATH, KNATIVE_API_GROUP
+from trustyai_tests.tests.constants import (
+    TRUSTYAI_SERVICE,
+    MODEL_DATA_PATH,
+    KNATIVE_API_GROUP,
+    ODH_OPERATOR,
+    RHOAI_OPERATOR,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +49,15 @@ class TrustyAIModelMetadata:
         self.num_observations = num_observations
         self.model_name = model_name
         self.num_features = num_features
+
+
+def is_odh_or_rhoai():
+    operators = {ODH_OPERATOR, RHOAI_OPERATOR}
+    for csv in ClusterServiceVersion.get():
+        for operator in operators:
+            if operator in csv.name:
+                return operator
+    raise RuntimeError("Neither ODH nor RHOAI operators are installed.")
 
 
 def get_ocp_token(namespace):
@@ -108,19 +124,20 @@ def verify_trustyai_model_metadata(namespace, model, data_path, num_batches=None
 
 def parse_trustyai_model_metadata(model_metadata):
     json_data = json.loads(model_metadata)
+    logger.info(f"Model metadata: {json_data}")
 
     model_metadata_list = []
 
-    for item in json_data:
+    for model_id, item in json_data.items():
         try:
             data = item["data"]
-        except (IndexError, KeyError) as exp:
+        except KeyError as exp:
             raise ValueError(f"Invalid JSON data format. {exp}")
 
         input_tensor_name = data["inputTensorName"]
         output_tensor_name = data["outputTensorName"]
         num_observations = data["observations"]
-        model_name = data["modelId"]
+        model_name = model_id
 
         model_metadata_list.append(
             TrustyAIModelMetadata(

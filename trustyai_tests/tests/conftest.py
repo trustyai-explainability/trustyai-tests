@@ -10,8 +10,10 @@ from ocp_resources.trustyai_service import TrustyAIService
 from trustyai_tests.tests.constants import (
     TRUSTYAI_SERVICE,
     MINIO_DATA_CONNECTION_NAME,
+    ODH_OPERATOR,
 )
 from trustyai_tests.tests.minio import MinioSecret, MinioPod, MinioService
+from trustyai_tests.tests.utils import is_odh_or_rhoai
 
 
 @pytest.fixture(scope="session")
@@ -21,10 +23,13 @@ def client():
 
 @pytest.fixture(autouse=True, scope="session")
 def modelmesh_configmap():
-    opendatahub_ns = Namespace(name="opendatahub", ensure_exists=True)
+    operator = is_odh_or_rhoai()
+    namespace = Namespace(
+        name="opendatahub" if operator == ODH_OPERATOR else "redhat-ods-applications", ensure_exists=True
+    )
     with ConfigMap(
         name="model-serving-config",
-        namespace=opendatahub_ns.name,
+        namespace=namespace.name,
         data={"config.yaml": yaml.dump({"podsPerRuntime": 1})},
     ):
         yield
