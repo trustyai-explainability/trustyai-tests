@@ -65,7 +65,6 @@ class TestDriftMetrics:
     ) -> None:
         verify_metric_request(
             namespace=model_namespace,
-            model=gaussian_credit_model,
             endpoint=get_metric_endpoint(metric=Metric.MEANSHIFT),
             expected_metric_name=Metric.MEANSHIFT.value.upper(),
             json_data={"modelId": gaussian_credit_model.name, "referenceTag": "TRAINING"},
@@ -76,7 +75,6 @@ class TestDriftMetrics:
     ) -> None:
         verify_metric_scheduling(
             namespace=model_namespace,
-            model=gaussian_credit_model,
             endpoint=get_metric_endpoint(metric=Metric.MEANSHIFT, schedule=True),
             json_data={"modelId": gaussian_credit_model.name, "referenceTag": "TRAINING"},
         )
@@ -96,7 +94,6 @@ class TestDriftMetrics:
     ) -> None:
         verify_metric_request(
             namespace=model_namespace,
-            model=gaussian_credit_model,
             endpoint=get_metric_endpoint(metric=Metric.FOURIERMMD),
             expected_metric_name=Metric.FOURIERMMD.value.upper(),
             json_data={"modelId": gaussian_credit_model.name, "referenceTag": "TRAINING"},
@@ -107,7 +104,6 @@ class TestDriftMetrics:
     ) -> None:
         verify_metric_scheduling(
             namespace=model_namespace,
-            model=gaussian_credit_model,
             endpoint=get_metric_endpoint(metric=Metric.FOURIERMMD, schedule=True),
             json_data={"modelId": gaussian_credit_model.name, "referenceTag": "TRAINING"},
         )
@@ -127,7 +123,6 @@ class TestDriftMetrics:
     ) -> None:
         verify_metric_request(
             namespace=model_namespace,
-            model=gaussian_credit_model,
             endpoint=get_metric_endpoint(metric=Metric.KSTEST),
             expected_metric_name=Metric.KSTEST.value.upper(),
             json_data={"modelId": gaussian_credit_model.name, "referenceTag": "TRAINING"},
@@ -138,7 +133,6 @@ class TestDriftMetrics:
     ) -> None:
         verify_metric_scheduling(
             namespace=model_namespace,
-            model=gaussian_credit_model,
             endpoint=get_metric_endpoint(metric=Metric.KSTEST, schedule=True),
             json_data={"modelId": gaussian_credit_model.name, "referenceTag": "TRAINING"},
         )
@@ -156,7 +150,6 @@ class TestDriftMetrics:
     ) -> None:
         verify_metric_request(
             namespace=model_namespace,
-            model=gaussian_credit_model,
             endpoint=get_metric_endpoint(metric=Metric.APPROXKSTEST),
             expected_metric_name=Metric.APPROXKSTEST.value.upper(),
             json_data={"modelId": gaussian_credit_model.name, "referenceTag": "TRAINING"},
@@ -167,7 +160,6 @@ class TestDriftMetrics:
     ) -> None:
         verify_metric_scheduling(
             namespace=model_namespace,
-            model=gaussian_credit_model,
             endpoint=get_metric_endpoint(metric=Metric.APPROXKSTEST, schedule=True),
             json_data={"modelId": gaussian_credit_model.name, "referenceTag": "TRAINING"},
         )

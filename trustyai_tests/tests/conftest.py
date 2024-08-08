@@ -3,6 +3,7 @@ from typing import Any, Generator
 import pytest
 import yaml
 from kubernetes.dynamic import DynamicClient
+from kubernetes.dynamic.exceptions import ConflictError
 from ocp_resources.configmap import ConfigMap
 from ocp_resources.namespace import Namespace
 from ocp_resources.resource import get_client
@@ -71,23 +72,33 @@ def modelmesh_serviceaccount(client: DynamicClient, model_namespace: Namespace) 
 @pytest.fixture(scope="session")
 def cluster_monitoring_config(client: DynamicClient) -> ConfigMap:
     config_yaml = yaml.dump({"enableUserWorkload": "true"})
-    with ConfigMap(
-        name="cluster-monitoring-config",
-        namespace="openshift-monitoring",
-        data={"config.yaml": config_yaml},
-    ) as cm:
-        yield cm
+    name = "cluster-monitoring-config"
+    namespace = "openshift-monitoring"
+    try:
+        with ConfigMap(
+            name=name,
+            namespace=namespace,
+            data={"config.yaml": config_yaml},
+        ) as cm:
+            yield cm
+    except ConflictError:
+        yield ConfigMap(name=name, namespace=namespace)
 
 
 @pytest.fixture(scope="session")
 def user_workload_monitoring_config(client: DynamicClient) -> ConfigMap:
     config_yaml = yaml.dump({"prometheus": {"logLevel": "debug", "retention": "15d"}})
-    with ConfigMap(
-        name="user-workload-monitoring-config",
-        namespace="openshift-user-workload-monitoring",
-        data={"config.yaml": config_yaml},
-    ) as cm:
-        yield cm
+    name = "user-workload-monitoring-config"
+    namespace = "openshift-user-workload-monitoring"
+    try:
+        with ConfigMap(
+            name=name,
+            namespace=namespace,
+            data={"config.yaml": config_yaml},
+        ) as cm:
+            yield cm
+    except ConflictError:
+        yield ConfigMap(name=name, namespace=namespace)
 
 
 @pytest.fixture(scope="class")

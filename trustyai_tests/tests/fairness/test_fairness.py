@@ -103,7 +103,6 @@ class TestFairnessMetrics:
         for model in [onnx_loan_model_alpha, onnx_loan_model_beta]:
             verify_metric_request(
                 namespace=model_namespace,
-                model=model,
                 endpoint=get_metric_endpoint(metric=Metric.SPD),
                 expected_metric_name=Metric.SPD.value.upper(),
                 json_data=get_json_data(model),
@@ -119,7 +118,6 @@ class TestFairnessMetrics:
         for model in [onnx_loan_model_alpha, onnx_loan_model_beta]:
             verify_metric_scheduling(
                 namespace=model_namespace,
-                model=model,
                 endpoint=get_metric_endpoint(metric=Metric.SPD, schedule=True),
                 json_data=get_json_data(model),
             )
@@ -148,7 +146,6 @@ class TestFairnessMetrics:
         for model in [onnx_loan_model_alpha, onnx_loan_model_beta]:
             verify_metric_request(
                 namespace=model_namespace,
-                model=model,
                 endpoint=get_metric_endpoint(metric=Metric.DIR),
                 expected_metric_name=Metric.DIR.value.upper(),
                 json_data=get_json_data(model),
@@ -164,7 +161,6 @@ class TestFairnessMetrics:
         for model in [onnx_loan_model_alpha, onnx_loan_model_beta]:
             verify_metric_scheduling(
                 namespace=model_namespace,
-                model=model,
                 endpoint=get_metric_endpoint(metric=Metric.DIR, schedule=True),
                 json_data=get_json_data(model),
             )
@@ -225,7 +221,6 @@ class TestMultipleNamespaces:
             for metric in (Metric.SPD, Metric.DIR):
                 verify_metric_scheduling(
                     namespace=namespace,
-                    model=inference_service,
                     endpoint=get_metric_endpoint(metric=metric, schedule=True),
                     json_data=get_json_data(inference_service),
                 )
