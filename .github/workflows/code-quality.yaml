@@ -1,0 +1,48 @@
+name: Code Quality Checks
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  code-quality:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+
+    - name: Install dependencies
+      run: poetry install --no-interaction --no-root
+
+    - name: Run Ruff
+      run: poetry run ruff check .
+
+    - name: Run Ruff formatter
+      run: poetry run ruff format . --check
+
+    - name: Run Flake8
+      run: poetry run flake8
+
+    - name: Check for merge conflicts
+      run: |
+        ! grep -rn "^<<<<<<< HEAD" --exclude-dir={.git,.github}
+
+    - name: Check for debug statements
+      run: |
+        ! grep -rn "import pdb" --exclude-dir={.git,.github}
+        ! grep -rn "import ipdb" --exclude-dir={.git,.github}
+        ! grep -rn "import pudb" --exclude-dir={.git,.github}
+
+    - name: Check for trailing whitespace
+      run: |
+        ! grep -rn "[[:blank:]]$" --exclude-dir={.git,.github}
+
+    - name: Run Gitleaks
+      uses: gitleaks/gitleaks-action@v2
