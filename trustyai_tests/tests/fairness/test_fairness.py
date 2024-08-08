@@ -3,7 +3,6 @@ from typing import Any
 import pytest
 from ocp_resources.inference_service import InferenceService
 from ocp_resources.namespace import Namespace
-from ocp_resources.serving_runtime import ServingRuntime
 from ocp_resources.trustyai_service import TrustyAIService
 
 from trustyai_tests.tests.constants import MODEL_DATA_PATH
@@ -195,10 +194,10 @@ class TestMultipleNamespaces:
 
     def test_multiple_namespaces(
         self,
-        model_namespaces_with_minio: list(Namespace),
-        trustyai_services_in_namespaces: list(TrustyAIService),
-        ovms_runtimes_in_namespaces: list(ServingRuntime),
-        onnx_loan_models_in_namespaces: list(InferenceService),
+        model_namespaces_with_minio: Any,
+        trustyai_services_in_namespaces: Any,
+        ovms_runtimes_in_namespaces: Any,
+        onnx_loan_models_in_namespaces: Any,
     ):
         num_batches = 3
         for namespace, inference_service in zip(model_namespaces_with_minio, onnx_loan_models_in_namespaces):

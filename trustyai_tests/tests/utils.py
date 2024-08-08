@@ -14,7 +14,6 @@ from ocp_resources.namespace import Namespace
 from ocp_resources.pod import Pod
 from ocp_resources.route import Route
 from ocp_utilities.monitoring import Prometheus
-from requests import Response
 
 from trustyai_tests.tests.constants import (
     TRUSTYAI_SERVICE,
@@ -80,7 +79,7 @@ def get_trustyai_service_route(namespace: Namespace) -> Route:
     return Route(namespace=namespace.name, name=TRUSTYAI_SERVICE, ensure_exists=True)
 
 
-def get_trustyai_model_metadata(namespace: Namespace) -> Response:
+def get_trustyai_model_metadata(namespace: Namespace) -> Any:
     return send_trustyai_service_request(
         namespace=namespace,
         endpoint="/info",
@@ -90,7 +89,7 @@ def get_trustyai_model_metadata(namespace: Namespace) -> Response:
 
 def send_trustyai_service_request(
     namespace: Namespace, endpoint: str, method: http.HTTPMethod, data: Any = None, json: Any = None
-) -> Response:
+) -> Any:
     trustyai_service_route = get_trustyai_service_route(namespace=namespace)
     token = get_ocp_token(namespace=namespace)
 
@@ -116,6 +115,9 @@ def verify_trustyai_model_metadata(
     model_metadata_list = parse_trustyai_model_metadata(model_metadata=response.content)
 
     model_metadata = next((m for m in model_metadata_list if m.model_name == model.name), None)
+
+    if model_metadata is None:
+        raise ValueError(f"No metadata found for model '{model.name}'")
 
     assert (
         model_metadata.model_name == model.name
@@ -285,7 +287,7 @@ def send_data_to_inference_service(
             sleep(10)
 
 
-def upload_data_to_trustyai_service(namespace: Namespace, data_path: str) -> Response:
+def upload_data_to_trustyai_service(namespace: Namespace, data_path: str) -> Any:
     with open(f"{data_path}", "r") as file:
         data = file.read()
 

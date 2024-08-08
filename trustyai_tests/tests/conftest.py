@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Generator
 
 import pytest
 import yaml
@@ -25,7 +25,7 @@ def client() -> DynamicClient:
 
 
 @pytest.fixture(autouse=True, scope="session")
-def modelmesh_configmap() -> None:
+def modelmesh_configmap() -> ConfigMap:
     operator = is_odh_or_rhoai()
     namespace = Namespace(
         name="opendatahub" if operator == ODH_OPERATOR else "redhat-ods-applications", ensure_exists=True
@@ -34,8 +34,8 @@ def modelmesh_configmap() -> None:
         name="model-serving-config",
         namespace=namespace.name,
         data={"config.yaml": yaml.dump({"podsPerRuntime": 1})},
-    ):
-        yield
+    ) as cm:
+        yield cm
 
 
 @pytest.fixture(scope="class")
@@ -110,7 +110,7 @@ def trustyai_service(
 
 
 @pytest.fixture(scope="class")
-def minio_service(client: DynamicClient, model_namespace: Namespace) -> MinioService:
+def minio_service(client: DynamicClient, model_namespace: Namespace) -> Generator[MinioService, Any, None]:
     with MinioService(
         name="minio",
         port=9000,
@@ -122,7 +122,7 @@ def minio_service(client: DynamicClient, model_namespace: Namespace) -> MinioSer
 
 
 @pytest.fixture(scope="class")
-def minio_pod(client: DynamicClient, model_namespace: Namespace) -> MinioPod:
+def minio_pod(client: DynamicClient, model_namespace: Namespace) -> Generator[MinioPod, Any, None]:
     with MinioPod(
         client=client,
         name="minio",
@@ -133,7 +133,7 @@ def minio_pod(client: DynamicClient, model_namespace: Namespace) -> MinioPod:
 
 
 @pytest.fixture(scope="class")
-def minio_secret(client: DynamicClient, model_namespace: Namespace) -> MinioSecret:
+def minio_secret(client: DynamicClient, model_namespace: Namespace) -> Generator[MinioSecret, Any, None]:
     with MinioSecret(
         client=client,
         name=MINIO_DATA_CONNECTION_NAME,
@@ -149,5 +149,7 @@ def minio_secret(client: DynamicClient, model_namespace: Namespace) -> MinioSecr
 
 
 @pytest.fixture(scope="class")
-def minio_data_connection(minio_service: MinioService, minio_pod: MinioPod, minio_secret: MinioSecret) -> MinioSecret:
+def minio_data_connection(
+    minio_service: MinioService, minio_pod: MinioPod, minio_secret: MinioSecret
+) -> Generator[MinioSecret, Any, None]:
     yield minio_secret

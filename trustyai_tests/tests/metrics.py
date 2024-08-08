@@ -17,7 +17,7 @@ class Metric(Enum):
     KSTEST = ("kstest", MetricType.DRIFT)
     APPROXKSTEST = ("approxkstest", MetricType.DRIFT)
 
-    def __init__(self, value: str, metric_type: MetricType):
+    def __init__(self, value: tuple[str, MetricType], metric_type: MetricType):
         self._value_ = value
         self.metric_type = metric_type
 

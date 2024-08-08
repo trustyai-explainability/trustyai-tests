@@ -1,3 +1,5 @@
+from typing import Generator, Any
+
 import pytest
 from kubernetes.dynamic import DynamicClient
 
@@ -122,7 +124,7 @@ def onnx_loan_model_beta(
 
 
 @pytest.fixture(scope="class")
-def model_namespaces_with_minio() -> list(Namespace):
+def model_namespaces_with_minio() -> Generator[list[Namespace], Any, None]:
     namespaces = []
 
     for i in range(2):
@@ -135,7 +137,9 @@ def model_namespaces_with_minio() -> list(Namespace):
 
 
 @pytest.fixture(scope="class")
-def trustyai_services_in_namespaces(model_namespaces_with_minio: list(Namespace)) -> list(TrustyAIService):
+def trustyai_services_in_namespaces(
+    model_namespaces_with_minio: list[Namespace],
+) -> Generator[list[TrustyAIService], Any, None]:
     trustyai_services = []
 
     for namespace in model_namespaces_with_minio:
@@ -154,7 +158,9 @@ def trustyai_services_in_namespaces(model_namespaces_with_minio: list(Namespace)
 
 
 @pytest.fixture(scope="class")
-def ovms_runtimes_in_namespaces(model_namespaces_with_minio: list(Namespace)) -> list(ServingRuntime):
+def ovms_runtimes_in_namespaces(
+    model_namespaces_with_minio: Any,
+) -> Generator[list[ServingRuntime], Any, None]:
     ovms_runtimes = []
 
     for namespace in model_namespaces_with_minio:
@@ -168,8 +174,8 @@ def ovms_runtimes_in_namespaces(model_namespaces_with_minio: list(Namespace)) ->
 
 @pytest.fixture(scope="class")
 def onnx_loan_models_in_namespaces(
-    model_namespaces_with_minio: list(Namespace), ovms_runtimes_in_namespaces: list(ServingRuntime)
-) -> list(InferenceService):
+    model_namespaces_with_minio: Any, ovms_runtimes_in_namespaces: Any
+) -> Generator[list[InferenceService], Any, None]:
     inference_services = []
     for namespace, ovms_runtime in zip(model_namespaces_with_minio, ovms_runtimes_in_namespaces):
         inference_service = InferenceService(
