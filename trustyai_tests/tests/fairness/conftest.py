@@ -1,6 +1,8 @@
 import pytest
+from kubernetes.dynamic import DynamicClient
 
 from ocp_resources.inference_service import InferenceService
+from ocp_resources.namespace import Namespace
 from ocp_resources.serving_runtime import ServingRuntime
 from ocp_resources.trustyai_service import TrustyAIService
 
@@ -11,16 +13,17 @@ from trustyai_tests.tests.constants import (
     MINIO_DATA_CONNECTION_NAME,
 )
 from trustyai_tests.tests.fairness.utils import deploy_namespace_with_minio
+from trustyai_tests.tests.minio import MinioSecret
 from trustyai_tests.tests.utils import wait_for_modelmesh_pods_registered
 
-ONNX = "onnx"
-OVMS = "ovms"
-OVMS_RUNTIME_NAME = f"{OVMS}-1.x"
-OVMS_QUAY_IMAGE = "quay.io/opendatahub/openvino_model_server:stable"
-ONNX_LOAN_MODEL_ALPHA_PATH = "onnx/loan_model_alpha_august.onnx"
+ONNX: str = "onnx"
+OVMS: str = "ovms"
+OVMS_RUNTIME_NAME: str = f"{OVMS}-1.x"
+OVMS_QUAY_IMAGE: str = "quay.io/opendatahub/openvino_model_server:stable"
+ONNX_LOAN_MODEL_ALPHA_PATH: str = "onnx/loan_model_alpha_august.onnx"
 
 
-def create_ovms_runtime(namespace):
+def create_ovms_runtime(namespace: Namespace) -> ServingRuntime:
     supported_model_formats = [
         {"name": OPENVINO_MODEL_FORMAT, "version": "opset1", "autoSelect": True},
         {"name": ONNX, "version": "1"},
@@ -67,13 +70,15 @@ def create_ovms_runtime(namespace):
 
 
 @pytest.fixture(scope="class")
-def ovms_runtime(minio_data_connection, model_namespace):
+def ovms_runtime(minio_data_connection: MinioSecret, model_namespace: Namespace) -> ServingRuntime:
     with create_ovms_runtime(model_namespace) as ovms:
         yield ovms
 
 
 @pytest.fixture(scope="class")
-def onnx_loan_model_alpha(client, model_namespace, minio_data_connection, ovms_runtime):
+def onnx_loan_model_alpha(
+    client: DynamicClient, model_namespace: Namespace, minio_data_connection: MinioSecret, ovms_runtime: ServingRuntime
+) -> InferenceService:
     with InferenceService(
         client=client,
         name="demo-loan-nn-onnx-alpha",
@@ -94,7 +99,9 @@ def onnx_loan_model_alpha(client, model_namespace, minio_data_connection, ovms_r
 
 
 @pytest.fixture(scope="class")
-def onnx_loan_model_beta(client, model_namespace, minio_data_connection, ovms_runtime):
+def onnx_loan_model_beta(
+    client: DynamicClient, model_namespace: Namespace, minio_data_connection: MinioSecret, ovms_runtime: ServingRuntime
+) -> InferenceService:
     with InferenceService(
         client=client,
         name="demo-loan-nn-onnx-beta",
@@ -115,7 +122,7 @@ def onnx_loan_model_beta(client, model_namespace, minio_data_connection, ovms_ru
 
 
 @pytest.fixture(scope="class")
-def model_namespaces_with_minio():
+def model_namespaces_with_minio() -> list(Namespace):
     namespaces = []
 
     for i in range(2):
@@ -128,7 +135,7 @@ def model_namespaces_with_minio():
 
 
 @pytest.fixture(scope="class")
-def trustyai_services_in_namespaces(model_namespaces_with_minio):
+def trustyai_services_in_namespaces(model_namespaces_with_minio: list(Namespace)) -> list(TrustyAIService):
     trustyai_services = []
 
     for namespace in model_namespaces_with_minio:
@@ -147,7 +154,7 @@ def trustyai_services_in_namespaces(model_namespaces_with_minio):
 
 
 @pytest.fixture(scope="class")
-def ovms_runtimes_in_namespaces(model_namespaces_with_minio):
+def ovms_runtimes_in_namespaces(model_namespaces_with_minio: list(Namespace)) -> list(ServingRuntime):
     ovms_runtimes = []
 
     for namespace in model_namespaces_with_minio:
@@ -160,7 +167,9 @@ def ovms_runtimes_in_namespaces(model_namespaces_with_minio):
 
 
 @pytest.fixture(scope="class")
-def onnx_loan_models_in_namespaces(model_namespaces_with_minio, ovms_runtimes_in_namespaces):
+def onnx_loan_models_in_namespaces(
+    model_namespaces_with_minio: list(Namespace), ovms_runtimes_in_namespaces: list(ServingRuntime)
+) -> list(InferenceService):
     inference_services = []
     for namespace, ovms_runtime in zip(model_namespaces_with_minio, ovms_runtimes_in_namespaces):
         inference_service = InferenceService(

@@ -8,7 +8,7 @@ from trustyai_tests.tests.constants import OPENDATAHUB_IO
 class MinioPod(Pod):
     def __init__(
         self,
-        image,
+        image: str,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -50,11 +50,11 @@ class MinioPod(Pod):
 class MinioSecret(Secret):
     def __init__(
         self,
-        aws_access_key_id,
-        aws_default_region,
-        aws_s3_bucket,
-        aws_s3_endpoint,
-        aws_secret_access_key,
+        aws_access_key_id: str,
+        aws_default_region: str,
+        aws_s3_bucket: str,
+        aws_s3_endpoint: str,
+        aws_secret_access_key: str,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -88,8 +88,8 @@ class MinioSecret(Secret):
 class MinioService(Service):
     def __init__(
         self,
-        port,
-        target_port,
+        port: int,
+        target_port: int,
         **kwargs,
     ):
         super().__init__(**kwargs)

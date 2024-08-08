@@ -17,12 +17,12 @@ class Metric(Enum):
     KSTEST = ("kstest", MetricType.DRIFT)
     APPROXKSTEST = ("approxkstest", MetricType.DRIFT)
 
-    def __init__(self, value, metric_type):
+    def __init__(self, value: str, metric_type: MetricType):
         self._value_ = value
         self.metric_type = metric_type
 
 
-def get_metric_endpoint(metric, schedule=False):
+def get_metric_endpoint(metric: Metric, schedule: bool = False) -> str:
     base_endpoint = "/metrics/group/fairness" if metric.metric_type == MetricType.FAIRNESS else "/metrics/drift"
     endpoint = f"{base_endpoint}/{metric.value}"
 

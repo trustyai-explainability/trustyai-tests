@@ -1,18 +1,19 @@
-TRUSTYAI_SERVICE = "trustyai-service"
+TRUSTYAI_SERVICE: str = "trustyai-service"
 
-OPENVINO_MODEL_FORMAT = "openvino_ir"
+OPENVINO_MODEL_FORMAT: str = "openvino_ir"
 
-KSERVE_API_GROUP = "serving.kserve.io"
+KSERVE_API_GROUP: str = "serving.kserve.io"
 
-TRUSTYAI_API_GROUP = "trustyai.opendatahub.io"
+TRUSTYAI_API_GROUP: str = "trustyai.opendatahub.io"
 
-OPENDATAHUB_IO = "opendatahub.io"
+OPENDATAHUB_IO: str = "opendatahub.io"
 
-MODEL_DATA_PATH = "./trustyai_tests/model_data"
+MODEL_DATA_PATH: str = "./trustyai_tests/model_data"
 
-MINIO_DATA_CONNECTION_NAME = "aws-connection-minio-data-connection"
+MINIO_DATA_CONNECTION_NAME: str = "aws-connection-minio-data-connection"
 
-KNATIVE_API_GROUP = "serving.knative.dev"
+KNATIVE_API_GROUP: str = "serving.knative.dev"
 
-ODH_OPERATOR = "opendatahub-operator"
-RHOAI_OPERATOR = "rhods-operator"
+ODH_OPERATOR: str = "opendatahub-operator"
+
+RHOAI_OPERATOR: str = "rhods-operator"

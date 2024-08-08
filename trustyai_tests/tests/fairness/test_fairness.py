@@ -1,4 +1,10 @@
+from typing import Any
+
 import pytest
+from ocp_resources.inference_service import InferenceService
+from ocp_resources.namespace import Namespace
+from ocp_resources.serving_runtime import ServingRuntime
+from ocp_resources.trustyai_service import TrustyAIService
 
 from trustyai_tests.tests.constants import MODEL_DATA_PATH
 from trustyai_tests.tests.metrics import get_metric_endpoint, Metric
@@ -13,9 +19,9 @@ from trustyai_tests.tests.utils import (
 )
 
 
-IS_MALE_IDENTIFYING = "Is Male-Identifying?"
-WILL_DEFAULT = "Will Default?"
-INPUT_MAPPINGS = {
+IS_MALE_IDENTIFYING: str = "Is Male-Identifying?"
+WILL_DEFAULT: str = "Will Default?"
+INPUT_MAPPINGS: dict[str, str] = {
     "customer_data_input-0": "Number of Children",
     "customer_data_input-1": "Total Income",
     "customer_data_input-2": "Number of Total Family Members",
@@ -28,11 +34,11 @@ INPUT_MAPPINGS = {
     "customer_data_input-9": "Age",
     "customer_data_input-10": "Length of Employment?",
 }
-OUTPUT_MAPPINGS = {"predict": WILL_DEFAULT}
-INPUT_DATA_PATH = f"{MODEL_DATA_PATH}/loan-nn-onnx"
+OUTPUT_MAPPINGS: dict[str, str] = {"predict": WILL_DEFAULT}
+INPUT_DATA_PATH: str = f"{MODEL_DATA_PATH}/loan-nn-onnx"
 
 
-def get_json_data(inference_service):
+def get_json_data(inference_service: InferenceService) -> dict[str, Any]:
     return {
         "modelId": inference_service.name,
         "protectedAttribute": IS_MALE_IDENTIFYING,
@@ -59,7 +65,13 @@ class TestFairnessMetrics:
         4.3. Verify that the metric has reached Prometheus.
     """
 
-    def test_loan_model_metadata(self, model_namespace, trustyai_service, onnx_loan_model_alpha, onnx_loan_model_beta):
+    def test_loan_model_metadata(
+        self,
+        model_namespace: Namespace,
+        trustyai_service: TrustyAIService,
+        onnx_loan_model_alpha: InferenceService,
+        onnx_loan_model_beta: InferenceService,
+    ) -> None:
         wait_for_modelmesh_pods_registered(namespace=model_namespace)
 
         for model in [onnx_loan_model_alpha, onnx_loan_model_beta]:
@@ -82,7 +94,13 @@ class TestFairnessMetrics:
                 data_path=INPUT_DATA_PATH,
             )
 
-    def test_request_spd(self, model_namespace, trustyai_service, onnx_loan_model_alpha, onnx_loan_model_beta):
+    def test_request_spd(
+        self,
+        model_namespace: Namespace,
+        trustyai_service: TrustyAIService,
+        onnx_loan_model_alpha: InferenceService,
+        onnx_loan_model_beta: InferenceService,
+    ) -> None:
         for model in [onnx_loan_model_alpha, onnx_loan_model_beta]:
             verify_metric_request(
                 namespace=model_namespace,
@@ -92,7 +110,13 @@ class TestFairnessMetrics:
                 json_data=get_json_data(model),
             )
 
-    def test_schedule_spd(self, model_namespace, trustyai_service, onnx_loan_model_alpha, onnx_loan_model_beta):
+    def test_schedule_spd(
+        self,
+        model_namespace: Namespace,
+        trustyai_service: TrustyAIService,
+        onnx_loan_model_alpha: InferenceService,
+        onnx_loan_model_beta: InferenceService,
+    ) -> None:
         for model in [onnx_loan_model_alpha, onnx_loan_model_beta]:
             verify_metric_scheduling(
                 namespace=model_namespace,
@@ -101,7 +125,12 @@ class TestFairnessMetrics:
                 json_data=get_json_data(model),
             )
 
-    def test_spd_prometheus_query(self, model_namespace, onnx_loan_model_alpha, onnx_loan_model_beta):
+    def test_spd_prometheus_query(
+        self,
+        model_namespace: Namespace,
+        onnx_loan_model_alpha: InferenceService,
+        onnx_loan_model_beta: InferenceService,
+    ) -> None:
         for model in [onnx_loan_model_alpha, onnx_loan_model_beta]:
             verify_trustyai_metric_prometheus(
                 namespace=model_namespace,
@@ -110,7 +139,13 @@ class TestFairnessMetrics:
                 metric_name=Metric.SPD.value,
             )
 
-    def test_request_dir(self, model_namespace, trustyai_service, onnx_loan_model_alpha, onnx_loan_model_beta):
+    def test_request_dir(
+        self,
+        model_namespace: Namespace,
+        trustyai_service: TrustyAIService,
+        onnx_loan_model_alpha: InferenceService,
+        onnx_loan_model_beta: InferenceService,
+    ) -> None:
         for model in [onnx_loan_model_alpha, onnx_loan_model_beta]:
             verify_metric_request(
                 namespace=model_namespace,
@@ -120,7 +155,13 @@ class TestFairnessMetrics:
                 json_data=get_json_data(model),
             )
 
-    def test_schedule_dir(self, model_namespace, trustyai_service, onnx_loan_model_alpha, onnx_loan_model_beta):
+    def test_schedule_dir(
+        self,
+        model_namespace: Namespace,
+        trustyai_service: TrustyAIService,
+        onnx_loan_model_alpha: InferenceService,
+        onnx_loan_model_beta: InferenceService,
+    ) -> None:
         for model in [onnx_loan_model_alpha, onnx_loan_model_beta]:
             verify_metric_scheduling(
                 namespace=model_namespace,
@@ -129,7 +170,12 @@ class TestFairnessMetrics:
                 json_data=get_json_data(model),
             )
 
-    def test_dir_prometheus_query(self, model_namespace, onnx_loan_model_alpha, onnx_loan_model_beta):
+    def test_dir_prometheus_query(
+        self,
+        model_namespace: Namespace,
+        onnx_loan_model_alpha: InferenceService,
+        onnx_loan_model_beta: InferenceService,
+    ) -> None:
         for inference_service in [onnx_loan_model_alpha, onnx_loan_model_beta]:
             verify_trustyai_metric_prometheus(
                 namespace=model_namespace,
@@ -149,10 +195,10 @@ class TestMultipleNamespaces:
 
     def test_multiple_namespaces(
         self,
-        model_namespaces_with_minio,
-        trustyai_services_in_namespaces,
-        ovms_runtimes_in_namespaces,
-        onnx_loan_models_in_namespaces,
+        model_namespaces_with_minio: list(Namespace),
+        trustyai_services_in_namespaces: list(TrustyAIService),
+        ovms_runtimes_in_namespaces: list(ServingRuntime),
+        onnx_loan_models_in_namespaces: list(InferenceService),
     ):
         num_batches = 3
         for namespace, inference_service in zip(model_namespaces_with_minio, onnx_loan_models_in_namespaces):

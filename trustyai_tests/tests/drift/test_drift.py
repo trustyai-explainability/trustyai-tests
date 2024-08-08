@@ -2,6 +2,9 @@ import http
 
 
 import pytest
+from ocp_resources.inference_service import InferenceService
+from ocp_resources.namespace import Namespace
+from ocp_resources.trustyai_service import TrustyAIService
 
 from trustyai_tests.tests.metrics import Metric, get_metric_endpoint
 from trustyai_tests.tests.utils import (
@@ -32,7 +35,9 @@ class TestDriftMetrics:
         3.3. Verify that the metric has reached Prometheus.
     """
 
-    def test_gaussian_credit_model_metadata(self, model_namespace, trustyai_service, gaussian_credit_model):
+    def test_gaussian_credit_model_metadata(
+        self, model_namespace: Namespace, trustyai_service: TrustyAIService, gaussian_credit_model: InferenceService
+    ) -> None:
         wait_for_modelmesh_pods_registered(namespace=model_namespace)
 
         path = f"{MODEL_DATA_PATH}/{gaussian_credit_model.name}"
@@ -55,7 +60,9 @@ class TestDriftMetrics:
             data_path=path,
         )
 
-    def test_request_meanshift(self, model_namespace, trustyai_service, gaussian_credit_model):
+    def test_request_meanshift(
+        self, model_namespace: Namespace, trustyai_service: TrustyAIService, gaussian_credit_model: InferenceService
+    ) -> None:
         verify_metric_request(
             namespace=model_namespace,
             model=gaussian_credit_model,
@@ -64,7 +71,9 @@ class TestDriftMetrics:
             json_data={"modelId": gaussian_credit_model.name, "referenceTag": "TRAINING"},
         )
 
-    def test_schedule_meanshift(self, model_namespace, trustyai_service, gaussian_credit_model):
+    def test_schedule_meanshift(
+        self, model_namespace: Namespace, trustyai_service: TrustyAIService, gaussian_credit_model: InferenceService
+    ) -> None:
         verify_metric_scheduling(
             namespace=model_namespace,
             model=gaussian_credit_model,
@@ -72,7 +81,9 @@ class TestDriftMetrics:
             json_data={"modelId": gaussian_credit_model.name, "referenceTag": "TRAINING"},
         )
 
-    def test_meanshift_prometheus_query(self, model_namespace, gaussian_credit_model):
+    def test_meanshift_prometheus_query(
+        self, model_namespace: Namespace, gaussian_credit_model: InferenceService
+    ) -> None:
         verify_trustyai_metric_prometheus(
             namespace=model_namespace,
             model=gaussian_credit_model,
@@ -80,7 +91,9 @@ class TestDriftMetrics:
             metric_name=Metric.MEANSHIFT.value,
         )
 
-    def test_request_fouriermmd(self, model_namespace, trustyai_service, gaussian_credit_model):
+    def test_request_fouriermmd(
+        self, model_namespace: Namespace, trustyai_service: TrustyAIService, gaussian_credit_model: InferenceService
+    ) -> None:
         verify_metric_request(
             namespace=model_namespace,
             model=gaussian_credit_model,
@@ -89,7 +102,9 @@ class TestDriftMetrics:
             json_data={"modelId": gaussian_credit_model.name, "referenceTag": "TRAINING"},
         )
 
-    def test_schedule_fouriermmd(self, model_namespace, trustyai_service, gaussian_credit_model):
+    def test_schedule_fouriermmd(
+        self, model_namespace: Namespace, trustyai_service: TrustyAIService, gaussian_credit_model: InferenceService
+    ) -> None:
         verify_metric_scheduling(
             namespace=model_namespace,
             model=gaussian_credit_model,
@@ -97,7 +112,9 @@ class TestDriftMetrics:
             json_data={"modelId": gaussian_credit_model.name, "referenceTag": "TRAINING"},
         )
 
-    def test_fouriermmd_prometheus_query(self, model_namespace, gaussian_credit_model):
+    def test_fouriermmd_prometheus_query(
+        self, model_namespace: Namespace, gaussian_credit_model: InferenceService
+    ) -> None:
         verify_trustyai_metric_prometheus(
             namespace=model_namespace,
             model=gaussian_credit_model,
@@ -105,7 +122,9 @@ class TestDriftMetrics:
             metric_name=Metric.FOURIERMMD.value,
         )
 
-    def test_request_kstest(self, model_namespace, trustyai_service, gaussian_credit_model):
+    def test_request_kstest(
+        self, model_namespace: Namespace, trustyai_service: TrustyAIService, gaussian_credit_model: InferenceService
+    ) -> None:
         verify_metric_request(
             namespace=model_namespace,
             model=gaussian_credit_model,
@@ -114,7 +133,9 @@ class TestDriftMetrics:
             json_data={"modelId": gaussian_credit_model.name, "referenceTag": "TRAINING"},
         )
 
-    def test_schedule_kstest_scheduling_request(self, model_namespace, trustyai_service, gaussian_credit_model):
+    def test_schedule_kstest_scheduling_request(
+        self, model_namespace: Namespace, trustyai_service: TrustyAIService, gaussian_credit_model: InferenceService
+    ) -> None:
         verify_metric_scheduling(
             namespace=model_namespace,
             model=gaussian_credit_model,
@@ -122,7 +143,7 @@ class TestDriftMetrics:
             json_data={"modelId": gaussian_credit_model.name, "referenceTag": "TRAINING"},
         )
 
-    def test_kstest_prometheus_query(self, model_namespace, gaussian_credit_model):
+    def test_kstest_prometheus_query(self, model_namespace: Namespace, gaussian_credit_model: InferenceService) -> None:
         verify_trustyai_metric_prometheus(
             namespace=model_namespace,
             model=gaussian_credit_model,
@@ -130,7 +151,9 @@ class TestDriftMetrics:
             metric_name=Metric.KSTEST.value,
         )
 
-    def test_request_approxkstest(self, model_namespace, trustyai_service, gaussian_credit_model):
+    def test_request_approxkstest(
+        self, model_namespace: Namespace, trustyai_service: TrustyAIService, gaussian_credit_model: InferenceService
+    ) -> None:
         verify_metric_request(
             namespace=model_namespace,
             model=gaussian_credit_model,
@@ -139,7 +162,9 @@ class TestDriftMetrics:
             json_data={"modelId": gaussian_credit_model.name, "referenceTag": "TRAINING"},
         )
 
-    def test_schedule_approxkstest(self, model_namespace, trustyai_service, gaussian_credit_model):
+    def test_schedule_approxkstest(
+        self, model_namespace: Namespace, trustyai_service: TrustyAIService, gaussian_credit_model: InferenceService
+    ) -> None:
         verify_metric_scheduling(
             namespace=model_namespace,
             model=gaussian_credit_model,
@@ -147,7 +172,9 @@ class TestDriftMetrics:
             json_data={"modelId": gaussian_credit_model.name, "referenceTag": "TRAINING"},
         )
 
-    def test_approxkstest_prometheus_query(self, model_namespace, gaussian_credit_model):
+    def test_approxkstest_prometheus_query(
+        self, model_namespace: Namespace, gaussian_credit_model: InferenceService
+    ) -> None:
         verify_trustyai_metric_prometheus(
             namespace=model_namespace,
             model=gaussian_credit_model,
