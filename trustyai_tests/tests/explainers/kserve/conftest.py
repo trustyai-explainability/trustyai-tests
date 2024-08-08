@@ -2,6 +2,7 @@ import pytest
 
 from ocp_resources.inference_service import InferenceService
 
+
 @pytest.fixture(scope="class")
 def bank_churn_model_lime(client, model_namespace):
     with InferenceService(
@@ -10,21 +11,16 @@ def bank_churn_model_lime(client, model_namespace):
         namespace=model_namespace,
         predictor={
             "model": {
-                "modelFormat": {
-                    "name": "sklearn"
-                },
+                "modelFormat": {"name": "sklearn"},
                 "protocolVersion": "v2",
                 "runtime": "kserve-sklearnserver",
-                "storageUri": "https://github.com/trustyai-explainability/model-collection/raw/bank-churn/model.joblib"
+                "storageUri": "https://github.com/trustyai-explainability/model-collection/raw/bank-churn/model.joblib",
             },
         },
-        explainer={
-            "containers": [{
-                "name": "explainer",
-                "image": "quay.io/trustyai/trustyai-kserve-explainer:latest"}]
-        }
+        explainer={"containers": [{"name": "explainer", "image": "quay.io/trustyai/trustyai-kserve-explainer:latest"}]},
     ) as inference_service:
         yield inference_service
+
 
 @pytest.fixture(scope="class")
 def bank_churn_model_shap(client, model_namespace):
@@ -34,26 +30,20 @@ def bank_churn_model_shap(client, model_namespace):
         namespace=model_namespace,
         predictor={
             "model": {
-                "modelFormat": {
-                    "name": "sklearn"
-                },
+                "modelFormat": {"name": "sklearn"},
                 "protocolVersion": "v2",
                 "runtime": "kserve-sklearnserver",
-                "storageUri": "https://github.com/trustyai-explainability/model-collection/raw/bank-churn/model.joblib"
+                "storageUri": "https://github.com/trustyai-explainability/model-collection/raw/bank-churn/model.joblib",
             },
         },
         explainer={
             "containers": [
                 {
-                "name": "explainer",
-                "image": "quay.io/trustyai/trustyai-kserve-explainer:latest",
-                "env":
-                    {
-                        "name": "SHAP",
-                        "value": "SHAP"
-                    }
+                    "name": "explainer",
+                    "image": "quay.io/trustyai/trustyai-kserve-explainer:latest",
+                    "env": {"name": "SHAP", "value": "SHAP"},
                 }
             ]
-        }
+        },
     ) as inference_service:
         yield inference_service
