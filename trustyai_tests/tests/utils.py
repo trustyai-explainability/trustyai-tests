@@ -4,10 +4,13 @@ import logging
 import os
 import subprocess
 from time import time, sleep
+from typing import Any
 
 import kubernetes
 import requests
 from ocp_resources.cluster_service_version import ClusterServiceVersion
+from ocp_resources.inference_service import InferenceService
+from ocp_resources.namespace import Namespace
 from ocp_resources.pod import Pod
 from ocp_resources.route import Route
 from ocp_utilities.monitoring import Prometheus
@@ -20,7 +23,7 @@ from trustyai_tests.tests.constants import (
     RHOAI_OPERATOR,
 )
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 class TrustyAIPodNotFoundError(Exception):
@@ -28,7 +31,7 @@ class TrustyAIPodNotFoundError(Exception):
 
 
 class ModelInputData:
-    def __init__(self, name, num_features, num_observations, data_type):
+    def __init__(self, name: str, num_features: int, num_observations: int, data_type: str):
         self.name = name
         self.num_features = num_features
         self.num_observations = num_observations
@@ -38,11 +41,11 @@ class ModelInputData:
 class TrustyAIModelMetadata:
     def __init__(
         self,
-        input_tensor_name,
-        output_tensor_name,
-        num_observations,
-        model_name,
-        num_features,
+        input_tensor_name: str,
+        output_tensor_name: str,
+        num_observations: int,
+        model_name: str,
+        num_features: int,
     ):
         self.input_tensor_name = input_tensor_name
         self.output_tensor_name = output_tensor_name
@@ -60,11 +63,11 @@ def is_odh_or_rhoai():
     raise RuntimeError("Neither ODH nor RHOAI operators are installed.")
 
 
-def get_ocp_token(namespace):
+def get_ocp_token(namespace: Namespace) -> str:
     return subprocess.check_output(["oc", "create", "token", "test-user", "-n", namespace.name]).decode().strip()
 
 
-def get_trustyai_pod(namespace):
+def get_trustyai_pod(namespace: Namespace) -> Pod:
     for pod in Pod.get(namespace=namespace.name):
         if TRUSTYAI_SERVICE in pod.name:
             return pod
@@ -72,11 +75,11 @@ def get_trustyai_pod(namespace):
     raise TrustyAIPodNotFoundError(f"No TrustyAI pod found in namespace {namespace.name}")
 
 
-def get_trustyai_service_route(namespace):
+def get_trustyai_service_route(namespace: Namespace) -> Route:
     return Route(namespace=namespace.name, name=TRUSTYAI_SERVICE, ensure_exists=True)
 
 
-def get_trustyai_model_metadata(namespace):
+def get_trustyai_model_metadata(namespace: Namespace) -> Any:
     return send_trustyai_service_request(
         namespace=namespace,
         endpoint="/info",
@@ -84,7 +87,9 @@ def get_trustyai_model_metadata(namespace):
     )
 
 
-def send_trustyai_service_request(namespace, endpoint, method, data=None, json=None):
+def send_trustyai_service_request(
+    namespace: Namespace, endpoint: str, method: http.HTTPMethod, data: Any = None, json: Any = None
+) -> Any:
     trustyai_service_route = get_trustyai_service_route(namespace=namespace)
     token = get_ocp_token(namespace=namespace)
 
@@ -98,7 +103,9 @@ def send_trustyai_service_request(namespace, endpoint, method, data=None, json=N
     raise ValueError(f"Unsupported HTTP method: {method}")
 
 
-def verify_trustyai_model_metadata(namespace, model, data_path, num_batches=None):
+def verify_trustyai_model_metadata(
+    namespace: Namespace, model: InferenceService, data_path: str, num_batches: int = None
+):
     response = get_trustyai_model_metadata(namespace=namespace)
     assert (
         response.status_code == http.HTTPStatus.OK
@@ -108,6 +115,9 @@ def verify_trustyai_model_metadata(namespace, model, data_path, num_batches=None
     model_metadata_list = parse_trustyai_model_metadata(model_metadata=response.content)
 
     model_metadata = next((m for m in model_metadata_list if m.model_name == model.name), None)
+
+    if model_metadata is None:
+        raise ValueError(f"No metadata found for model '{model.name}'")
 
     assert (
         model_metadata.model_name == model.name
@@ -122,7 +132,7 @@ def verify_trustyai_model_metadata(namespace, model, data_path, num_batches=None
     ), f"Expected number of features '{model_input_data.num_features}', but got '{model_metadata.num_features}'"
 
 
-def parse_trustyai_model_metadata(model_metadata):
+def parse_trustyai_model_metadata(model_metadata: Any) -> list[TrustyAIModelMetadata]:
     json_data = json.loads(model_metadata)
     logger.info(f"Model metadata: {json_data}")
 
@@ -152,7 +162,7 @@ def parse_trustyai_model_metadata(model_metadata):
     return model_metadata_list
 
 
-def parse_input_data(data_path, num_batches=None):
+def parse_input_data(data_path: str, num_batches: int = None) -> ModelInputData:
     total_observations = 0
     name = ""
     num_features = 0
@@ -194,7 +204,7 @@ def parse_input_data(data_path, num_batches=None):
     )
 
 
-def wait_for_modelmesh_pods_registered(namespace):
+def wait_for_modelmesh_pods_registered(namespace: Namespace) -> None:
     """Wait for modelmesh pods to be registered by TrustyAIService"""
     pods_with_env_var = False
     all_pods_running = False
@@ -232,8 +242,13 @@ def wait_for_modelmesh_pods_registered(namespace):
 
 
 def send_data_to_inference_service(
-    namespace, inference_service, data_path, max_retries=5, retry_delay=1, num_batches=None
-):
+    namespace: Namespace,
+    inference_service: InferenceService,
+    data_path: str,
+    max_retries: int = 5,
+    retry_delay: int = 1,
+    num_batches: int = None,
+) -> None:
     inference_route = Route(namespace=namespace.name, name=inference_service.name)
     token = get_ocp_token(namespace=namespace)
 
@@ -272,7 +287,7 @@ def send_data_to_inference_service(
             sleep(10)
 
 
-def upload_data_to_trustyai_service(namespace, data_path):
+def upload_data_to_trustyai_service(namespace: Namespace, data_path: str) -> Any:
     with open(f"{data_path}", "r") as file:
         data = file.read()
 
@@ -282,7 +297,7 @@ def upload_data_to_trustyai_service(namespace, data_path):
     )
 
 
-def verify_metric_request(namespace, model, endpoint, expected_metric_name, json_data):
+def verify_metric_request(namespace: Namespace, endpoint: str, expected_metric_name: str, json_data: Any) -> None:
     """
     Send a basic metric request to TrustyAI and validates the response.
 
@@ -315,7 +330,7 @@ def verify_metric_request(namespace, model, endpoint, expected_metric_name, json
     assert response_data["thresholds"] != "", "Thresholds are empty"
 
 
-def verify_metric_scheduling(namespace, model, endpoint, json_data):
+def verify_metric_scheduling(namespace: Namespace, endpoint: str, json_data: Any) -> None:
     """
     Send a request to schedule a metric to TrustyAI and validates the response.
 
@@ -341,7 +356,14 @@ def verify_metric_scheduling(namespace, model, endpoint, json_data):
     assert response_data["timestamp"] != "", "Timestamp is empty"
 
 
-def verify_trustyai_metric_prometheus(namespace, model, prometheus_query, metric_name, max_retries=20, retry_delay=5):
+def verify_trustyai_metric_prometheus(
+    namespace: Namespace,
+    model: InferenceService,
+    prometheus_query: str,
+    metric_name: str,
+    max_retries: int = 20,
+    retry_delay: int = 5,
+) -> None:
     """
     Sends a query to Prometheus for a specific TrustyAI metric and verifies the result for a specific model.
 
@@ -417,7 +439,7 @@ def verify_trustyai_metric_prometheus(namespace, model, prometheus_query, metric
     assert model_data["value"] != "", "Value is empty"
 
 
-def get_prometheus_token(duration="1800s"):
+def get_prometheus_token(duration: int = "1800s") -> str:
     token_command = f"oc create token prometheus-k8s -n openshift-monitoring --duration={duration}"
     try:
         result = subprocess.run(token_command, shell=True, check=True, capture_output=True, text=True)
@@ -426,7 +448,9 @@ def get_prometheus_token(duration="1800s"):
         raise RuntimeError(f"Command {token_command} failed to execute: {e.stderr}")
 
 
-def apply_trustyai_name_mappings(namespace, inference_service, input_mappings, output_mappings):
+def apply_trustyai_name_mappings(
+    namespace: Namespace, inference_service: InferenceService, input_mappings: Any, output_mappings: Any
+) -> None:
     data = {"modelId": inference_service.name, "inputMapping": input_mappings, "outputMapping": output_mappings}
 
     response = send_trustyai_service_request(
@@ -435,7 +459,7 @@ def apply_trustyai_name_mappings(namespace, inference_service, input_mappings, o
     assert response.status_code == http.HTTPStatus.OK, f"Wrong status code: {response.status_code}"
 
 
-def get_kserve_route(model_namespace, model):
+def get_kserve_route(model_namespace: str, model: InferenceService) -> Any:
     """
     Gets the hostname of a model deployed on KServe.
 
@@ -461,7 +485,7 @@ def get_kserve_route(model_namespace, model):
     return route.instance.status.url
 
 
-def verify_model_prediction(model_namespace, model):
+def verify_model_prediction(model_namespace: str, model: InferenceService) -> None:
     """
     Verifies output of KServe explainers' "predict" endpoint.
 
@@ -484,7 +508,7 @@ def verify_model_prediction(model_namespace, model):
     assert len(response.json()["predictions"]) != 0, "Predictions is empty."
 
 
-def verify_saliency_explanation(model_namespace, model):
+def verify_saliency_explanation(model_namespace: str, model: InferenceService) -> None:
     """
     Verifies output of KServe explainers' "explain" endpoint.
 

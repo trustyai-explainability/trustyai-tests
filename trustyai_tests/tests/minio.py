@@ -1,3 +1,5 @@
+from typing import Any
+
 from ocp_resources.pod import Pod
 from ocp_resources.secret import Secret
 from ocp_resources.service import Service
@@ -8,13 +10,13 @@ from trustyai_tests.tests.constants import OPENDATAHUB_IO
 class MinioPod(Pod):
     def __init__(
         self,
-        image,
-        **kwargs,
-    ):
+        image: str,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(**kwargs)
         self.image = image
 
-    def to_dict(self):
+    def to_dict(self) -> None:
         super().to_dict()
         self.res["metadata"]["labels"] = {
             "app": "minio",
@@ -50,13 +52,13 @@ class MinioPod(Pod):
 class MinioSecret(Secret):
     def __init__(
         self,
-        aws_access_key_id,
-        aws_default_region,
-        aws_s3_bucket,
-        aws_s3_endpoint,
-        aws_secret_access_key,
-        **kwargs,
-    ):
+        aws_access_key_id: str,
+        aws_default_region: str,
+        aws_s3_bucket: str,
+        aws_s3_endpoint: str,
+        aws_secret_access_key: str,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(**kwargs)
         self.aws_access_key_id = aws_access_key_id
         self.aws_default_region = aws_default_region
@@ -64,7 +66,7 @@ class MinioSecret(Secret):
         self.aws_s3_endpoint = aws_s3_endpoint
         self.aws_secret_access_key = aws_secret_access_key
 
-    def to_dict(self):
+    def to_dict(self) -> None:
         super().to_dict()
 
         self.res["metadata"]["labels"] = {
@@ -88,15 +90,15 @@ class MinioSecret(Secret):
 class MinioService(Service):
     def __init__(
         self,
-        port,
-        target_port,
-        **kwargs,
-    ):
+        port: int,
+        target_port: int,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(**kwargs)
         self.port = port
         self.target_port = target_port
 
-    def to_dict(self):
+    def to_dict(self) -> None:
         super().to_dict()
 
         self.res["spec"] = {

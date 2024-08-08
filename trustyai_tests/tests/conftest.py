@@ -1,5 +1,9 @@
+from typing import Any, Generator
+
 import pytest
 import yaml
+from kubernetes.dynamic import DynamicClient
+from kubernetes.dynamic.exceptions import ConflictError
 from ocp_resources.configmap import ConfigMap
 from ocp_resources.namespace import Namespace
 from ocp_resources.resource import get_client
@@ -17,12 +21,12 @@ from trustyai_tests.tests.utils import is_odh_or_rhoai
 
 
 @pytest.fixture(scope="session")
-def client():
+def client() -> DynamicClient:
     yield get_client()
 
 
 @pytest.fixture(autouse=True, scope="session")
-def modelmesh_configmap():
+def modelmesh_configmap() -> ConfigMap:
     operator = is_odh_or_rhoai()
     namespace = Namespace(
         name="opendatahub" if operator == ODH_OPERATOR else "redhat-ods-applications", ensure_exists=True
@@ -31,12 +35,12 @@ def modelmesh_configmap():
         name="model-serving-config",
         namespace=namespace.name,
         data={"config.yaml": yaml.dump({"podsPerRuntime": 1})},
-    ):
-        yield
+    ) as cm:
+        yield cm
 
 
 @pytest.fixture(scope="class")
-def model_namespace(client):
+def model_namespace(client: DynamicClient) -> Namespace:
     with Namespace(
         client=client,
         name="test-namespace",
@@ -60,41 +64,51 @@ def model_namespace(client):
 
 
 @pytest.fixture(scope="class")
-def modelmesh_serviceaccount(client, model_namespace):
+def modelmesh_serviceaccount(client: DynamicClient, model_namespace: Namespace) -> Any:
     with ServiceAccount(client=client, name="modelmesh-serving-sa", namespace=model_namespace.name):
         yield
 
 
 @pytest.fixture(scope="session")
-def cluster_monitoring_config(client):
+def cluster_monitoring_config(client: DynamicClient) -> ConfigMap:
     config_yaml = yaml.dump({"enableUserWorkload": "true"})
-    with ConfigMap(
-        name="cluster-monitoring-config",
-        namespace="openshift-monitoring",
-        data={"config.yaml": config_yaml},
-    ) as cm:
-        yield cm
+    name = "cluster-monitoring-config"
+    namespace = "openshift-monitoring"
+    try:
+        with ConfigMap(
+            name=name,
+            namespace=namespace,
+            data={"config.yaml": config_yaml},
+        ) as cm:
+            yield cm
+    except ConflictError:
+        yield ConfigMap(name=name, namespace=namespace)
 
 
 @pytest.fixture(scope="session")
-def user_workload_monitoring_config(client):
+def user_workload_monitoring_config(client: DynamicClient) -> ConfigMap:
     config_yaml = yaml.dump({"prometheus": {"logLevel": "debug", "retention": "15d"}})
-    with ConfigMap(
-        name="user-workload-monitoring-config",
-        namespace="openshift-user-workload-monitoring",
-        data={"config.yaml": config_yaml},
-    ) as cm:
-        yield cm
+    name = "user-workload-monitoring-config"
+    namespace = "openshift-user-workload-monitoring"
+    try:
+        with ConfigMap(
+            name=name,
+            namespace=namespace,
+            data={"config.yaml": config_yaml},
+        ) as cm:
+            yield cm
+    except ConflictError:
+        yield ConfigMap(name=name, namespace=namespace)
 
 
 @pytest.fixture(scope="class")
 def trustyai_service(
-    client,
-    model_namespace,
-    modelmesh_serviceaccount,
-    cluster_monitoring_config,
-    user_workload_monitoring_config,
-):
+    client: DynamicClient,
+    model_namespace: Namespace,
+    modelmesh_serviceaccount: Any,
+    cluster_monitoring_config: ConfigMap,
+    user_workload_monitoring_config: ConfigMap,
+) -> TrustyAIService:
     with TrustyAIService(
         client=client,
         name=TRUSTYAI_SERVICE,
@@ -107,7 +121,7 @@ def trustyai_service(
 
 
 @pytest.fixture(scope="class")
-def minio_service(client, model_namespace):
+def minio_service(client: DynamicClient, model_namespace: Namespace) -> Generator[MinioService, Any, None]:
     with MinioService(
         name="minio",
         port=9000,
@@ -119,7 +133,7 @@ def minio_service(client, model_namespace):
 
 
 @pytest.fixture(scope="class")
-def minio_pod(client, model_namespace):
+def minio_pod(client: DynamicClient, model_namespace: Namespace) -> Generator[MinioPod, Any, None]:
     with MinioPod(
         client=client,
         name="minio",
@@ -130,7 +144,7 @@ def minio_pod(client, model_namespace):
 
 
 @pytest.fixture(scope="class")
-def minio_secret(client, model_namespace):
+def minio_secret(client: DynamicClient, model_namespace: Namespace) -> Generator[MinioSecret, Any, None]:
     with MinioSecret(
         client=client,
         name=MINIO_DATA_CONNECTION_NAME,
@@ -146,5 +160,7 @@ def minio_secret(client, model_namespace):
 
 
 @pytest.fixture(scope="class")
-def minio_data_connection(minio_service, minio_pod, minio_secret):
+def minio_data_connection(
+    minio_service: MinioService, minio_pod: MinioPod, minio_secret: MinioSecret
+) -> Generator[MinioSecret, Any, None]:
     yield minio_secret
