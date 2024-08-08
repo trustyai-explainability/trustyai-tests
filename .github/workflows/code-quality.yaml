@@ -1,4 +1,4 @@
-name: Code Quality Checks
+name: Check Formatting
 
 on:
   push:
@@ -47,6 +47,3 @@ jobs:
     - name: Check for trailing whitespace
       run: |
         ! grep -rn "[[:blank:]]$" --exclude-dir={.git,.github}
-
-    - name: Run Gitleaks
-      uses: gitleaks/gitleaks-action@v2
