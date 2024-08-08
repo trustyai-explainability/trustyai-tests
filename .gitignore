@@ -22,3 +22,6 @@ dist/
 
 # Pycharm
 .idea
+
+# mypy
+.mypy_cache/
