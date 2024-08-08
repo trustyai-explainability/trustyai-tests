@@ -83,12 +83,12 @@ def get_trustyai_model_metadata(namespace: Namespace) -> Any:
     return send_trustyai_service_request(
         namespace=namespace,
         endpoint="/info",
-        method=http.HTTPMethod.GET,
+        method="GET",
     )
 
 
 def send_trustyai_service_request(
-    namespace: Namespace, endpoint: str, method: http.HTTPMethod, data: Any = None, json: Any = None
+    namespace: Namespace, endpoint: str, method: str, data: Any = None, json: Any = None
 ) -> Any:
     trustyai_service_route = get_trustyai_service_route(namespace=namespace)
     token = get_ocp_token(namespace=namespace)
@@ -96,9 +96,9 @@ def send_trustyai_service_request(
     url = f"https://{trustyai_service_route.host}{endpoint}"
     headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
 
-    if method == http.HTTPMethod.GET:
+    if method == "GET":
         return requests.get(url=url, headers=headers, verify=False)
-    elif method == http.HTTPMethod.POST:
+    elif method == "POST":
         return requests.post(url=url, headers=headers, data=data, json=json, verify=False)
     raise ValueError(f"Unsupported HTTP method: {method}")
 
@@ -315,9 +315,7 @@ def upload_data_to_trustyai_service(namespace: Namespace, data_path: str) -> Any
         data = file.read()
 
     logger.info(msg="Uploading data to TrustyAI Service.")
-    return send_trustyai_service_request(
-        namespace=namespace, endpoint="/data/upload", method=http.HTTPMethod.POST, data=data
-    )
+    return send_trustyai_service_request(namespace=namespace, endpoint="/data/upload", method="POST", data=data)
 
 
 def verify_metric_request(namespace: Namespace, endpoint: str, expected_metric_name: str, json_data: Any) -> None:
@@ -334,7 +332,7 @@ def verify_metric_request(namespace: Namespace, endpoint: str, expected_metric_n
     response = send_trustyai_service_request(
         namespace=namespace,
         endpoint=endpoint,
-        method=http.HTTPMethod.POST,
+        method="POST",
         json=json_data,
     )
     response_data = json.loads(response.text)
@@ -367,7 +365,7 @@ def verify_metric_scheduling(namespace: Namespace, endpoint: str, json_data: Any
     response = send_trustyai_service_request(
         namespace=namespace,
         endpoint=endpoint,
-        method=http.HTTPMethod.POST,
+        method="POST",
         json=json_data,
     )
     response_data = json.loads(response.text)
@@ -476,9 +474,7 @@ def apply_trustyai_name_mappings(
 ) -> None:
     data = {"modelId": inference_service.name, "inputMapping": input_mappings, "outputMapping": output_mappings}
 
-    response = send_trustyai_service_request(
-        namespace=namespace, endpoint="/info/names", method=http.HTTPMethod.POST, json=data
-    )
+    response = send_trustyai_service_request(namespace=namespace, endpoint="/info/names", method="POST", json=data)
     assert response.status_code == http.HTTPStatus.OK, f"Wrong status code: {response.status_code}"
 
 
