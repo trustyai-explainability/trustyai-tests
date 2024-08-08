@@ -133,21 +133,44 @@ def verify_trustyai_model_metadata(
 
 
 def parse_trustyai_model_metadata(model_metadata: Any) -> list[TrustyAIModelMetadata]:
-    json_data = json.loads(model_metadata)
+    if isinstance(model_metadata, bytes):
+        model_metadata = model_metadata.decode("utf-8")
+
+    if isinstance(model_metadata, str):
+        json_data = json.loads(model_metadata)
+    else:
+        json_data = model_metadata
+
     logger.info(f"Model metadata: {json_data}")
 
     model_metadata_list = []
 
-    for model_id, item in json_data.items():
+    # Handle both list and dict inputs
+    if isinstance(json_data, list):
+        items = json_data
+    elif isinstance(json_data, dict):
+        items = json_data.items()
+    else:
+        raise ValueError("Invalid input format. Expected list or dict.")
+
+    for item in items:
+        if isinstance(item, dict):
+            # Handle the first input format
+            model_id = item.get("data", {}).get("modelId")
+            data = item.get("data", {})
+        else:
+            # Handle the second input format
+            model_id, item_data = item
+            data = item_data.get("data", {})
+
         try:
-            data = item["data"]
+            input_tensor_name = data["inputTensorName"]
+            output_tensor_name = data["outputTensorName"]
+            num_observations = data["observations"]
+            model_name = model_id or "unknown"
+            num_features = len(data["inputSchema"]["items"])
         except KeyError as exp:
             raise ValueError(f"Invalid JSON data format. {exp}")
-
-        input_tensor_name = data["inputTensorName"]
-        output_tensor_name = data["outputTensorName"]
-        num_observations = data["observations"]
-        model_name = model_id
 
         model_metadata_list.append(
             TrustyAIModelMetadata(
@@ -155,7 +178,7 @@ def parse_trustyai_model_metadata(model_metadata: Any) -> list[TrustyAIModelMeta
                 output_tensor_name=output_tensor_name,
                 num_observations=num_observations,
                 model_name=model_name,
-                num_features=len(data["inputSchema"]["items"]),
+                num_features=num_features,
             )
         )
 
