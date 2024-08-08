@@ -28,6 +28,9 @@ jobs:
     - name: Run Ruff
       run: poetry run ruff check .
 
+    - name: Run Ruff formatter
+      run: poetry run ruff format . --check
+
     - name: Run Flake8
       run: poetry run flake8
 
