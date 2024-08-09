@@ -261,7 +261,7 @@ def wait_for_modelmesh_pods_registered(namespace: Namespace) -> None:
         if not pods_with_env_var or not all_pods_running:
             sleep(5)
 
-    sleep(30)
+    sleep(60)
 
 
 def send_data_to_inference_service(
