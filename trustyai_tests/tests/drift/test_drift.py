@@ -1,5 +1,4 @@
 import http
-from time import sleep
 
 import pytest
 from ocp_resources.inference_service import InferenceService
@@ -41,21 +40,18 @@ class TestDriftMetrics:
         wait_for_modelmesh_pods_registered(namespace=model_namespace)
 
         path = f"{MODEL_DATA_PATH}/{gaussian_credit_model.name}"
-        sleep(60)
 
         send_data_to_inference_service(
             inference_service=gaussian_credit_model,
             namespace=model_namespace,
             data_path=f"{path}/data_batches",
         )
-        sleep(60)
 
         response = upload_data_to_trustyai_service(
             namespace=model_namespace,
             data_path=f"{path}/training_data.json",
         )
         assert response.status_code == http.HTTPStatus.OK
-        sleep(60)
 
         verify_trustyai_model_metadata(
             namespace=model_namespace,

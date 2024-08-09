@@ -107,9 +107,7 @@ def verify_trustyai_model_metadata(
     namespace: Namespace, model: InferenceService, data_path: str, num_batches: int = None
 ):
     response = get_trustyai_model_metadata(namespace=namespace)
-    logger.info(msg=response.text)
-    logger.info(msg=response.content)
-    logger.info(msg=response.json)
+
     assert (
         response.status_code == http.HTTPStatus.OK
     ), f"Expected status code {http.HTTPStatus.OK}, but got {response.status_code}"
@@ -264,7 +262,7 @@ def wait_for_modelmesh_pods_registered(namespace: Namespace) -> None:
         if not pods_with_env_var or not all_pods_running:
             sleep(5)
 
-    sleep(120)
+    sleep(30)
 
 
 def send_data_to_inference_service(
@@ -297,9 +295,6 @@ def send_data_to_inference_service(
             while retry_count < max_retries:
                 try:
                     response = requests.post(url=url, headers=headers, data=data, verify=False)
-                    logger.info(msg=response.text)
-                    logger.info(msg=response.content)
-                    logger.info(msg=response.json)
 
                     response.raise_for_status()
                     if response.status_code == 200:
@@ -314,7 +309,7 @@ def send_data_to_inference_service(
                 logger.error(f"Maximum retries reached for file: {file_name}")
 
             files_processed += 1
-            sleep(30)
+            sleep(10)
 
 
 def upload_data_to_trustyai_service(namespace: Namespace, data_path: str) -> Any:
@@ -323,9 +318,7 @@ def upload_data_to_trustyai_service(namespace: Namespace, data_path: str) -> Any
 
     logger.info(msg="Uploading data to TrustyAI Service.")
     response = send_trustyai_service_request(namespace=namespace, endpoint="/data/upload", method="POST", data=data)
-    logger.info(msg=response.text)
-    logger.info(msg=response.content)
-    logger.info(msg=response.json)
+
     return response
 
 
@@ -486,9 +479,7 @@ def apply_trustyai_name_mappings(
     data = {"modelId": inference_service.name, "inputMapping": input_mappings, "outputMapping": output_mappings}
 
     response = send_trustyai_service_request(namespace=namespace, endpoint="/info/names", method="POST", json=data)
-    logger.info(msg=response.text)
-    logger.info(msg=response.content)
-    logger.info(msg=response.json)
+
     assert response.status_code == http.HTTPStatus.OK, f"Wrong status code: {response.status_code}"
 
 

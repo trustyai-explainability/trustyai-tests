@@ -1,4 +1,3 @@
-from time import sleep
 from typing import Any
 
 import pytest
@@ -73,7 +72,6 @@ class TestFairnessMetrics:
         onnx_loan_model_beta: InferenceService,
     ) -> None:
         wait_for_modelmesh_pods_registered(namespace=model_namespace)
-        sleep(60)
 
         for model in [onnx_loan_model_alpha, onnx_loan_model_beta]:
             send_data_to_inference_service(
@@ -81,7 +79,6 @@ class TestFairnessMetrics:
                 namespace=model_namespace,
                 data_path=INPUT_DATA_PATH,
             )
-            sleep(60)
 
             apply_trustyai_name_mappings(
                 namespace=model_namespace,
@@ -89,7 +86,6 @@ class TestFairnessMetrics:
                 input_mappings=INPUT_MAPPINGS,
                 output_mappings=OUTPUT_MAPPINGS,
             )
-            sleep(60)
 
             verify_trustyai_model_metadata(
                 namespace=model_namespace,
