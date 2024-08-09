@@ -107,6 +107,7 @@ def verify_trustyai_model_metadata(
     namespace: Namespace, model: InferenceService, data_path: str, num_batches: int = None
 ):
     response = get_trustyai_model_metadata(namespace=namespace)
+
     assert (
         response.status_code == http.HTTPStatus.OK
     ), f"Expected status code {http.HTTPStatus.OK}, but got {response.status_code}"
@@ -294,6 +295,7 @@ def send_data_to_inference_service(
             while retry_count < max_retries:
                 try:
                     response = requests.post(url=url, headers=headers, data=data, verify=False)
+
                     response.raise_for_status()
                     if response.status_code == 200:
                         logger.info(f"Successfully sent data for file: {file_name}")
@@ -315,7 +317,9 @@ def upload_data_to_trustyai_service(namespace: Namespace, data_path: str) -> Any
         data = file.read()
 
     logger.info(msg="Uploading data to TrustyAI Service.")
-    return send_trustyai_service_request(namespace=namespace, endpoint="/data/upload", method="POST", data=data)
+    response = send_trustyai_service_request(namespace=namespace, endpoint="/data/upload", method="POST", data=data)
+
+    return response
 
 
 def verify_metric_request(namespace: Namespace, endpoint: str, expected_metric_name: str, json_data: Any) -> None:
@@ -475,6 +479,7 @@ def apply_trustyai_name_mappings(
     data = {"modelId": inference_service.name, "inputMapping": input_mappings, "outputMapping": output_mappings}
 
     response = send_trustyai_service_request(namespace=namespace, endpoint="/info/names", method="POST", json=data)
+
     assert response.status_code == http.HTTPStatus.OK, f"Wrong status code: {response.status_code}"
 
 

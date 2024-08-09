@@ -1,6 +1,5 @@
 import http
 
-
 import pytest
 from ocp_resources.inference_service import InferenceService
 from ocp_resources.namespace import Namespace

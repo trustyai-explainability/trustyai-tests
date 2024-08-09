@@ -34,7 +34,12 @@ def modelmesh_configmap() -> ConfigMap:
     with ConfigMap(
         name="model-serving-config",
         namespace=namespace.name,
-        data={"config.yaml": yaml.dump({"podsPerRuntime": 1})},
+        data={
+            "config.yaml": yaml.dump({
+                "podsPerRuntime": 1,
+                "modelMeshImage": {"name": "quay.io/opendatahub/modelmesh", "tag": "fast"},
+            })
+        },
     ) as cm:
         yield cm
 
