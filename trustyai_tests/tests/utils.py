@@ -264,7 +264,7 @@ def wait_for_modelmesh_pods_registered(namespace: Namespace) -> None:
         if not pods_with_env_var or not all_pods_running:
             sleep(5)
 
-    sleep(60)
+    sleep(120)
 
 
 def send_data_to_inference_service(
@@ -297,6 +297,10 @@ def send_data_to_inference_service(
             while retry_count < max_retries:
                 try:
                     response = requests.post(url=url, headers=headers, data=data, verify=False)
+                    logger.info(msg=response.text)
+                    logger.info(msg=response.content)
+                    logger.info(msg=response.json)
+
                     response.raise_for_status()
                     if response.status_code == 200:
                         logger.info(f"Successfully sent data for file: {file_name}")
@@ -318,7 +322,11 @@ def upload_data_to_trustyai_service(namespace: Namespace, data_path: str) -> Any
         data = file.read()
 
     logger.info(msg="Uploading data to TrustyAI Service.")
-    return send_trustyai_service_request(namespace=namespace, endpoint="/data/upload", method="POST", data=data)
+    response = send_trustyai_service_request(namespace=namespace, endpoint="/data/upload", method="POST", data=data)
+    logger.info(msg=response.text)
+    logger.info(msg=response.content)
+    logger.info(msg=response.json)
+    return response
 
 
 def verify_metric_request(namespace: Namespace, endpoint: str, expected_metric_name: str, json_data: Any) -> None:
