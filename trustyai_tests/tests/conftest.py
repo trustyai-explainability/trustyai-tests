@@ -143,7 +143,8 @@ def minio_pod(client: DynamicClient, model_namespace: Namespace) -> Generator[Mi
         client=client,
         name="minio",
         namespace=model_namespace.name,
-        image="quay.io/trustyai/modelmesh-minio-examples:gauss",
+        image="quay.io/trustyai/modelmesh-minio-examples@"
+        "sha256:e8360ec33837b347c76d2ea45cd4fea0b40209f77520181b15e534b101b1f323",
     ) as mp:
         yield mp
 
