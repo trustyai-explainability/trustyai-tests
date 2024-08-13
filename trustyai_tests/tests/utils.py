@@ -532,12 +532,13 @@ def verify_model_prediction(model_namespace: str, model: InferenceService) -> No
     assert len(response.json()["predictions"]) != 0, "Predictions is empty."
 
 
-def verify_saliency_explanation(model_namespace: str, model: InferenceService) -> None:
+def verify_saliency_explanation(model_namespace: str, model: InferenceService, explainer_type) -> None:
     """
     Verifies output of KServe explainers' "explain" endpoint.
 
-     param model_namespace (str): Namespace where model lives.
+    :param model_namespace (str): Namespace where model lives.
     :param model (InferenceService): Name of explainer that is deployed
+    :param explainer_type (str): Type of explainer eg. LIME, SHAP
     """
     data = json.loads(f"{MODEL_DATA_PATH}/bank-inference_data.json")
     service_hostname = get_kserve_route(model_namespace=model_namespace, model=model)
@@ -550,8 +551,27 @@ def verify_saliency_explanation(model_namespace: str, model: InferenceService) -
         },
         timeout=10,
     )
+    # Get the explainer types from the response result
+    keys = list(response.json().keys())[1:]
     assert response.status_code == http.HTTPStatus.OK
-    assert response.json()["type"] == "explanation", f"Unexpected type: {response.json()['type']}"
-    assert len(response.json()["saliences"]) != 0
-    for item in response.json()["saliencies"]["outputs-0"]:
-        assert list(item.keys()) == ["name", "score", "confidence"], f"Unexpected saliency results: {list(item.keys())}"
+    # Check the explainer type in the response result
+    assert keys == explainer_type
+    # Case 1: Both LIME and SHAP saliences are returned
+    if len(keys) > 1:
+        for k in keys:
+            assert len(response.json()[k]) != 0
+            for item in response.json()[k]["outputs-0"]:
+                assert list(item.keys()) == [
+                    "name",
+                    "score",
+                    "confidence",
+                ], f"Unexpected saliency results: {list(item.keys())}"
+    # Case 2: Either LIME or SHAP saliencies are returned
+    else:
+        assert len(response.json()[keys]) != 0
+        for item in response.json()[keys]["outputs-0"]:
+            assert list(item.keys()) == [
+                "name",
+                "score",
+                "confidence",
+            ], f"Unexpected saliency results: {list(item.keys())}"
