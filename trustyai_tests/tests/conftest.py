@@ -1,4 +1,4 @@
-from typing import Any, Generator
+from typing import Any, Generator, Optional
 
 import pytest
 import yaml
@@ -20,28 +20,42 @@ from trustyai_tests.tests.minio import MinioSecret, MinioPod, MinioService
 from trustyai_tests.tests.utils import is_odh_or_rhoai
 
 
+def pytest_addoption(parser):
+    parser.addoption(
+        "--modelmesh-configmap", action="store_true", default=False, help="Run tests with modelmesh configmap"
+    )
+
+
+@pytest.fixture(scope="session")
+def use_modelmesh_configmap(request):
+    return request.config.getoption("--modelmesh-configmap")
+
+
 @pytest.fixture(scope="session")
 def client() -> DynamicClient:
     yield get_client()
 
 
 @pytest.fixture(autouse=True, scope="session")
-def modelmesh_configmap() -> ConfigMap:
-    operator = is_odh_or_rhoai()
-    namespace = Namespace(
-        name="opendatahub" if operator == ODH_OPERATOR else "redhat-ods-applications", ensure_exists=True
-    )
-    with ConfigMap(
-        name="model-serving-config",
-        namespace=namespace.name,
-        data={
-            "config.yaml": yaml.dump({
-                "podsPerRuntime": 1,
-                "modelMeshImage": {"name": "quay.io/opendatahub/modelmesh", "tag": "fast"},
-            })
-        },
-    ) as cm:
-        yield cm
+def modelmesh_configmap(use_modelmesh_configmap) -> Optional[ConfigMap]:
+    if use_modelmesh_configmap:
+        operator = is_odh_or_rhoai()
+        namespace = Namespace(
+            name="opendatahub" if operator == ODH_OPERATOR else "redhat-ods-applications", ensure_exists=True
+        )
+        with ConfigMap(
+            name="model-serving-config",
+            namespace=namespace.name,
+            data={
+                "config.yaml": yaml.dump({
+                    "podsPerRuntime": 1,
+                    "modelMeshImage": {"name": "quay.io/opendatahub/modelmesh", "tag": "fast"},
+                })
+            },
+        ) as cm:
+            yield cm
+    else:
+        yield None
 
 
 @pytest.fixture(scope="class")
