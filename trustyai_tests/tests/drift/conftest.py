@@ -11,7 +11,9 @@ SKLEARN: str = "sklearn"
 XGBOOST: str = "xgboost"
 MLSERVER: str = "mlserver"
 MLSERVER_RUNTIME_NAME: str = f"{MLSERVER}-1.x"
-MLSERVER_QUAY_IMAGE: str = "quay.io/aaguirre/mlserver:1.3.2"  # TODO: Change it to TrustyAI specific quay
+MLSERVER_QUAY_IMAGE: str = (
+    "quay.io/aaguirre/mlserver@" "sha256:8884d989b3063a47bf0e6c20c1c0ff253662121a977fe5b74b54e682839360d4"
+)
 
 
 @pytest.fixture(scope="class")
