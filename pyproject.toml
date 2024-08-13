@@ -38,6 +38,9 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
+testpaths = ["trustyai_tests/tests"]
+addopts = "--use-modelmesh-image"
+
 markers = [
     "openshift: marks tests to be run in OpenShift clusters.",
     "kubernetes: marks tests to be run in Kubernetes clusters."
