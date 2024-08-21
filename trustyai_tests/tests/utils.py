@@ -13,6 +13,7 @@ from ocp_resources.inference_service import InferenceService
 from ocp_resources.namespace import Namespace
 from ocp_resources.pod import Pod
 from ocp_resources.route import Route
+from ocp_resources.serving_runtime import ServingRuntime
 from ocp_utilities.monitoring import Prometheus
 
 from trustyai_tests.tests.constants import (
@@ -21,6 +22,11 @@ from trustyai_tests.tests.constants import (
     KNATIVE_API_GROUP,
     ODH_OPERATOR,
     RHOAI_OPERATOR,
+    OVMS_RUNTIME_NAME,
+    OVMS_QUAY_IMAGE,
+    OVMS,
+    OPENVINO_MODEL_FORMAT,
+    ONNX,
 )
 
 logger: logging.Logger = logging.getLogger(__name__)
@@ -575,3 +581,49 @@ def verify_saliency_explanation(model_namespace: str, model: InferenceService, e
                 "score",
                 "confidence",
             ], f"Unexpected saliency results: {list(item.keys())}"
+
+
+def create_ovms_runtime(namespace: Namespace) -> ServingRuntime:
+    supported_model_formats = [
+        {"name": OPENVINO_MODEL_FORMAT, "version": "opset1", "autoSelect": True},
+        {"name": ONNX, "version": "1"},
+    ]
+    containers = [
+        {
+            "name": OVMS,
+            "image": OVMS_QUAY_IMAGE,
+            "args": [
+                "--port=8001",
+                "--rest_port=8888",
+                "--config_path=/models/model_config_list.json",
+                "--file_system_poll_wait_seconds=0",
+                "--grpc_bind_address=127.0.0.1",
+                "--rest_bind_address=127.0.0.1",
+            ],
+            "resources": {
+                "requests": {"cpu": "500m", "memory": "1Gi"},
+                "limits": {"cpu": "5", "memory": "1Gi"},
+            },
+        }
+    ]
+
+    return ServingRuntime(
+        name=OVMS_RUNTIME_NAME,
+        namespace=namespace.name,
+        containers=containers,
+        supported_model_formats=supported_model_formats,
+        multi_model=True,
+        protocol_versions=["grpc-v1"],
+        grpc_endpoint="port:8085",
+        grpc_data_endpoint="port:8001",
+        built_in_adapter={
+            "serverType": OVMS,
+            "runtimeManagementPort": 8888,
+            "memBufferBytes": 134217728,
+            "modelLoadingTimeoutMillis": 90000,
+        },
+        annotations={"enable-route": "true"},
+        label={
+            "name": f"modelmesh-serving-{OVMS_RUNTIME_NAME}-SR",
+        },
+    )

@@ -42,5 +42,6 @@ testpaths = ["trustyai_tests/tests"]
 
 markers = [
     "openshift: marks tests to be run in OpenShift clusters.",
-    "kubernetes: marks tests to be run in Kubernetes clusters."
+    "kubernetes: marks tests to be run in Kubernetes clusters.",
+    "heavy: marks tests that are resource intensive."
 ]

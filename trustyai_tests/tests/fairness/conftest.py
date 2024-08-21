@@ -1,87 +1,27 @@
-from typing import Generator, Any
-
 import pytest
 from kubernetes.dynamic import DynamicClient
 
 from ocp_resources.inference_service import InferenceService
 from ocp_resources.namespace import Namespace
+from ocp_resources.secret import Secret
 from ocp_resources.serving_runtime import ServingRuntime
-from ocp_resources.trustyai_service import TrustyAIService
 
 from trustyai_tests.tests.constants import (
-    OPENVINO_MODEL_FORMAT,
     KSERVE_API_GROUP,
-    TRUSTYAI_SERVICE,
-    MINIO_DATA_CONNECTION_NAME,
+    ONNX,
 )
-from trustyai_tests.tests.fairness.utils import deploy_namespace_with_minio
-from trustyai_tests.tests.minio import MinioSecret
-from trustyai_tests.tests.utils import wait_for_modelmesh_pods_registered
-
-ONNX: str = "onnx"
-OVMS: str = "ovms"
-OVMS_RUNTIME_NAME: str = f"{OVMS}-1.x"
-OVMS_QUAY_IMAGE: str = (
-    "quay.io/opendatahub/openvino_model_server@sha256:564664371d3a21b9e732a5c1b4b40bacad714a5144c0a9aaf675baec4a04b148"
-)
-ONNX_LOAN_MODEL_ALPHA_PATH: str = "onnx/loan_model_alpha_august.onnx"
-
-
-def create_ovms_runtime(namespace: Namespace) -> ServingRuntime:
-    supported_model_formats = [
-        {"name": OPENVINO_MODEL_FORMAT, "version": "opset1", "autoSelect": True},
-        {"name": ONNX, "version": "1"},
-    ]
-    containers = [
-        {
-            "name": OVMS,
-            "image": OVMS_QUAY_IMAGE,
-            "args": [
-                "--port=8001",
-                "--rest_port=8888",
-                "--config_path=/models/model_config_list.json",
-                "--file_system_poll_wait_seconds=0",
-                "--grpc_bind_address=127.0.0.1",
-                "--rest_bind_address=127.0.0.1",
-            ],
-            "resources": {
-                "requests": {"cpu": "500m", "memory": "1Gi"},
-                "limits": {"cpu": "5", "memory": "1Gi"},
-            },
-        }
-    ]
-
-    return ServingRuntime(
-        name=OVMS_RUNTIME_NAME,
-        namespace=namespace.name,
-        containers=containers,
-        supported_model_formats=supported_model_formats,
-        multi_model=True,
-        protocol_versions=["grpc-v1"],
-        grpc_endpoint="port:8085",
-        grpc_data_endpoint="port:8001",
-        built_in_adapter={
-            "serverType": OVMS,
-            "runtimeManagementPort": 8888,
-            "memBufferBytes": 134217728,
-            "modelLoadingTimeoutMillis": 90000,
-        },
-        annotations={"enable-route": "true"},
-        label={
-            "name": f"modelmesh-serving-{OVMS_RUNTIME_NAME}-SR",
-        },
-    )
+from trustyai_tests.tests.utils import create_ovms_runtime
 
 
 @pytest.fixture(scope="class")
-def ovms_runtime(minio_data_connection: MinioSecret, model_namespace: Namespace) -> ServingRuntime:
+def ovms_runtime(minio_data_connection: Secret, model_namespace: Namespace) -> ServingRuntime:
     with create_ovms_runtime(model_namespace) as ovms:
         yield ovms
 
 
 @pytest.fixture(scope="class")
 def onnx_loan_model_alpha(
-    client: DynamicClient, model_namespace: Namespace, minio_data_connection: MinioSecret, ovms_runtime: ServingRuntime
+    client: DynamicClient, model_namespace: Namespace, minio_data_connection: Secret, ovms_runtime: ServingRuntime
 ) -> InferenceService:
     with InferenceService(
         client=client,
@@ -104,7 +44,7 @@ def onnx_loan_model_alpha(
 
 @pytest.fixture(scope="class")
 def onnx_loan_model_beta(
-    client: DynamicClient, model_namespace: Namespace, minio_data_connection: MinioSecret, ovms_runtime: ServingRuntime
+    client: DynamicClient, model_namespace: Namespace, minio_data_connection: Secret, ovms_runtime: ServingRuntime
 ) -> InferenceService:
     with InferenceService(
         client=client,
@@ -123,78 +63,3 @@ def onnx_loan_model_beta(
             condition=inference_service.Condition.READY, status=inference_service.Condition.Status.TRUE, timeout=10 * 60
         )
         yield inference_service
-
-
-@pytest.fixture(scope="class")
-def model_namespaces_with_minio() -> Generator[list[Namespace], Any, None]:
-    namespaces = []
-
-    for i in range(2):
-        namespace = deploy_namespace_with_minio(name=f"test-namespace-{i}")
-        namespaces.append(namespace)
-
-    yield namespaces
-    for namespace in namespaces:
-        namespace.delete(wait=True)
-
-
-@pytest.fixture(scope="class")
-def trustyai_services_in_namespaces(
-    model_namespaces_with_minio: list[Namespace],
-) -> Generator[list[TrustyAIService], Any, None]:
-    trustyai_services = []
-
-    for namespace in model_namespaces_with_minio:
-        trustyai_service = TrustyAIService(
-            name=TRUSTYAI_SERVICE,
-            namespace=namespace.name,
-            storage={"format": "PVC", "folder": "/inputs", "size": "1Gi"},
-            data={"filename": "data.csv", "format": "CSV"},
-            metrics={"schedule": "5s"},
-        )
-        trustyai_service.deploy()
-        trustyai_services.append(trustyai_service)
-    yield trustyai_services
-    for trustyai_service in trustyai_services:
-        trustyai_service.delete(wait=True)
-
-
-@pytest.fixture(scope="class")
-def ovms_runtimes_in_namespaces(
-    model_namespaces_with_minio: Any,
-) -> Generator[list[ServingRuntime], Any, None]:
-    ovms_runtimes = []
-
-    for namespace in model_namespaces_with_minio:
-        ovms_runtime = create_ovms_runtime(namespace=namespace)
-        ovms_runtime.deploy()
-        ovms_runtimes.append(ovms_runtime)
-    yield ovms_runtimes
-    for ovms_runtime in ovms_runtimes:
-        ovms_runtime.delete(wait=True)
-
-
-@pytest.fixture(scope="class")
-def onnx_loan_models_in_namespaces(
-    model_namespaces_with_minio: Any, ovms_runtimes_in_namespaces: Any
-) -> Generator[list[InferenceService], Any, None]:
-    inference_services = []
-    for namespace, ovms_runtime in zip(model_namespaces_with_minio, ovms_runtimes_in_namespaces):
-        inference_service = InferenceService(
-            name="demo-loan-nn-onnx-alpha",
-            namespace=namespace.name,
-            predictor={
-                "model": {
-                    "modelFormat": {"name": ONNX},
-                    "runtime": ovms_runtime.name,
-                    "storage": {"key": MINIO_DATA_CONNECTION_NAME, "path": ONNX_LOAN_MODEL_ALPHA_PATH},
-                }
-            },
-            annotations={f"{KSERVE_API_GROUP}/deploymentMode": "ModelMesh"},
-        )
-        inference_service.deploy()
-        wait_for_modelmesh_pods_registered(namespace=namespace)
-        inference_services.append(inference_service)
-    yield inference_services
-    for inference_service in inference_services:
-        inference_service.delete(wait=True)
