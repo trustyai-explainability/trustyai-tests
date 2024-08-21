@@ -81,6 +81,29 @@ def get_trustyai_pod(namespace: Namespace) -> Pod:
     raise TrustyAIPodNotFoundError(f"No TrustyAI pod found in namespace {namespace.name}")
 
 
+def wait_for_trustyai_pod_running(namespace: Namespace) -> None:
+    """Wait for a TrustyAI service pod to be running in the given namespace"""
+
+    timeout = 60 * 20  # 20 minutes timeout
+    start_time = time()
+
+    while True:
+        if time() - start_time > timeout:
+            raise TimeoutError("TrustyAI service pod is not ready in time")
+
+        try:
+            trustyai_pod = get_trustyai_pod(namespace=namespace)
+
+            trustyai_pod.wait_for_status(status=trustyai_pod.Status.RUNNING)
+            return
+        except TrustyAIPodNotFoundError:
+            pass
+        except kubernetes.dynamic.exceptions.NotFoundError:
+            pass
+
+        sleep(5)
+
+
 def get_trustyai_service_route(namespace: Namespace) -> Route:
     return Route(namespace=namespace.name, name=TRUSTYAI_SERVICE, ensure_exists=True)
 

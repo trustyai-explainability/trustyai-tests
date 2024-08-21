@@ -19,7 +19,7 @@ from trustyai_tests.tests.constants import (
     ODH_OPERATOR,
 )
 from trustyai_tests.tests.minio import create_minio_secret, create_minio_pod, create_minio_service
-from trustyai_tests.tests.utils import is_odh_or_rhoai
+from trustyai_tests.tests.utils import is_odh_or_rhoai, wait_for_trustyai_pod_running
 
 
 def pytest_addoption(parser):
@@ -138,6 +138,7 @@ def trustyai_service(
         data={"filename": "data.csv", "format": "CSV"},
         metrics={"schedule": "5s"},
     ) as trusty:
+        wait_for_trustyai_pod_running(namespace=model_namespace)
         yield trusty
 
 
