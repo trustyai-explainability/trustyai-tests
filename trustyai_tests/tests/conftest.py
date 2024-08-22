@@ -1,9 +1,12 @@
+from time import sleep
 from typing import Any, Generator, Optional
+
 import pytest
 import yaml
 from kubernetes.dynamic import DynamicClient
 from kubernetes.dynamic.exceptions import ConflictError
 from ocp_resources.configmap import ConfigMap
+from ocp_resources.maria_db import MariaDB
 from ocp_resources.namespace import Namespace
 from ocp_resources.pod import Pod
 from ocp_resources.resource import get_client
@@ -12,12 +15,18 @@ from ocp_resources.secret import Secret
 from ocp_resources.service import Service
 from ocp_resources.service_account import ServiceAccount
 from ocp_resources.trustyai_service import TrustyAIService
+from ocp_resources.mariadb_operator import MariadbOperator
+from ocp_utilities.operators import install_operator, uninstall_operator
 
 from trustyai_tests.tests.constants import (
     TRUSTYAI_SERVICE,
     ODH_OPERATOR,
 )
 from trustyai_tests.tests.minio import create_minio_secret, create_minio_pod, create_minio_service
+from trustyai_tests.tests.utils import (
+    wait_for_mariadb_operator_pods,
+    wait_for_mariadb_pods,
+)
 from trustyai_tests.tests.utils import logger, is_odh_or_rhoai, wait_for_trustyai_pod_running
 
 
@@ -64,7 +73,7 @@ def modelmesh_configmap(use_modelmesh_image) -> Optional[ConfigMap]:
     }
 
     if use_modelmesh_image:
-        config_data["modelMeshImage"] = {"name": "quay.io/opendatahub/modelmesh", "tag": "fast"}
+        config_data["modelMeshImage"] = {"name": "quay.io/opendatahub/modelmesh", "tag": "0.12.0.4-rc0"}
 
     with ConfigMap(
         name="model-serving-config",
@@ -96,6 +105,60 @@ def model_namespace(client: DynamicClient) -> Namespace:
         )
         role_binding.deploy()
         yield ns
+
+
+@pytest.fixture(scope="class")
+def db_credentials(model_namespace):
+    with Secret(
+        name="db-credentials",
+        namespace=model_namespace.name,
+        string_data={
+            "databaseKind": "mariadb",
+            # "databaseName": "trustyai_database",
+            "databaseUsername": "quarkus",
+            "databasePassword": "quarkus",
+            "databaseService": "mariadb",
+            "databasePort": "3306",
+            "databaseGeneration": "update",
+        },
+    ) as db_credentials:
+        yield db_credentials
+
+
+@pytest.fixture(scope="session")
+def mariadb_operator() -> Generator:
+    client = get_client()
+    name = "mariadb-operator"
+    namespace = "openshift-operators"
+    install_operator(
+        admin_client=client,
+        target_namespaces=[namespace],
+        name=name,
+        channel="alpha",
+        source="community-operators",
+        operator_namespace=namespace,
+        timeout=600,
+    )
+    yield
+    uninstall_operator(admin_client=client, name=name, operator_namespace=namespace)
+
+
+@pytest.fixture(scope="session")
+def mariadb_operator_cr(mariadb_operator: None) -> MariadbOperator:
+    with MariadbOperator(yaml_file="trustyai_tests/manifests/mariadb-operator.yaml") as mariadb_operator:
+        mariadb_operator.wait_for_condition(
+            condition="Deployed", status=mariadb_operator.Condition.Status.TRUE, timeout=10 * 60
+        )
+        wait_for_mariadb_operator_pods(mariadb_operator=mariadb_operator)
+        sleep(30)
+        yield mariadb_operator
+
+
+@pytest.fixture(scope="class")
+def mariadb(model_namespace, db_credentials, mariadb_operator_cr: MariadbOperator) -> MariaDB:
+    with MariaDB(yaml_file="trustyai_tests/manifests/mariadb.yaml") as mariadb:
+        wait_for_mariadb_pods(mariadb=mariadb)
+        yield mariadb
 
 
 @pytest.fixture(scope="class")
