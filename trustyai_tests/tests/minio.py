@@ -1,116 +1,79 @@
-from typing import Any
-
+from ocp_resources.namespace import Namespace
 from ocp_resources.pod import Pod
 from ocp_resources.secret import Secret
 from ocp_resources.service import Service
 
-from trustyai_tests.tests.constants import OPENDATAHUB_IO
+from trustyai_tests.tests.constants import OPENDATAHUB_IO, MINIO_DATA_CONNECTION_NAME
 
 
-class MinioPod(Pod):
-    def __init__(
-        self,
-        image: str,
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(**kwargs)
-        self.image = image
-
-    def to_dict(self) -> None:
-        super().to_dict()
-        self.res["metadata"]["labels"] = {
-            "app": "minio",
-            "maistra.io/expose-route": "true",
-        }
-        self.res["metadata"]["annotations"] = {
-            "sidecar.istio.io/inject": "true",
-        }
-        self.res["spec"] = {
-            "containers": [
+def create_minio_pod(namespace: Namespace) -> Pod:
+    name = "minio"
+    containers = [
+        {
+            "args": [
+                "server",
+                "/data1",
+            ],
+            "env": [
                 {
-                    "args": [
-                        "server",
-                        "/data1",
-                    ],
-                    "env": [
-                        {
-                            "name": "MINIO_ACCESS_KEY",
-                            "value": "THEACCESSKEY",
-                        },
-                        {
-                            "name": "MINIO_SECRET_KEY",
-                            "value": "THESECRETKEY",
-                        },
-                    ],
-                    "image": self.image,
-                    "name": self.name,
-                }
-            ]
+                    "name": "MINIO_ACCESS_KEY",
+                    "value": "THEACCESSKEY",
+                },
+                {
+                    "name": "MINIO_SECRET_KEY",
+                    "value": "THESECRETKEY",
+                },
+            ],
+            "image": "quay.io/trustyai/modelmesh-minio-examples@"
+            "sha256:e8360ec33837b347c76d2ea45cd4fea0b40209f77520181b15e534b101b1f323",
+            "name": name,
         }
+    ]
+
+    return Pod(
+        name=name,
+        namespace=namespace.name,
+        containers=containers,
+        label={"app": "minio", "maistra.io/expose-route": "true"},
+        annotations={"sidecar.istio.io/inject": "true"},
+    )
 
 
-class MinioSecret(Secret):
-    def __init__(
-        self,
-        aws_access_key_id: str,
-        aws_default_region: str,
-        aws_s3_bucket: str,
-        aws_s3_endpoint: str,
-        aws_secret_access_key: str,
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(**kwargs)
-        self.aws_access_key_id = aws_access_key_id
-        self.aws_default_region = aws_default_region
-        self.aws_s3_bucket = aws_s3_bucket
-        self.aws_s3_endpoint = aws_s3_endpoint
-        self.aws_secret_access_key = aws_secret_access_key
+def create_minio_service(namespace: Namespace) -> Service:
+    return Service(
+        name="minio",
+        namespace=namespace.name,
+        ports=[
+            {
+                "name": "minio-client-port",
+                "port": 9000,
+                "protocol": "TCP",
+                "targetPort": 9000,
+            }
+        ],
+        selector={
+            "app": "minio",
+        },
+    )
 
-    def to_dict(self) -> None:
-        super().to_dict()
 
-        self.res["metadata"]["labels"] = {
+def create_minio_secret(namespace: Namespace) -> Secret:
+    return Secret(
+        name=MINIO_DATA_CONNECTION_NAME,
+        namespace=namespace.name,
+        data_dict={
+            "AWS_ACCESS_KEY_ID": "VEhFQUNDRVNTS0VZ",
+            "AWS_DEFAULT_REGION": "dXMtc291dGg=",
+            "AWS_S3_BUCKET": "bW9kZWxtZXNoLWV4YW1wbGUtbW9kZWxz",
+            "AWS_S3_ENDPOINT": "aHR0cDovL21pbmlvOjkwMDA=",
+            "AWS_SECRET_ACCESS_KEY": "VEhFU0VDUkVUS0VZ",
+        },
+        label={
             f"{OPENDATAHUB_IO}/dashboard": "true",
             f"{OPENDATAHUB_IO}/managed": "true",
-        }
-        self.res["metadata"]["annotations"] = {
+        },
+        annotations={
             f"{OPENDATAHUB_IO}/connection-type": "s3",
             "openshift.io/display-name": "Minio Data Connection",
-        }
-        self.res["data"] = {
-            # Dummy values
-            "AWS_ACCESS_KEY_ID": self.aws_access_key_id,
-            "AWS_DEFAULT_REGION": self.aws_default_region,
-            "AWS_S3_BUCKET": self.aws_s3_bucket,
-            "AWS_S3_ENDPOINT": self.aws_s3_endpoint,
-            "AWS_SECRET_ACCESS_KEY": self.aws_secret_access_key,
-        }
-
-
-class MinioService(Service):
-    def __init__(
-        self,
-        port: int,
-        target_port: int,
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(**kwargs)
-        self.port = port
-        self.target_port = target_port
-
-    def to_dict(self) -> None:
-        super().to_dict()
-
-        self.res["spec"] = {
-            "ports": [
-                {
-                    "name": "minio-client-port",
-                    "port": self.port,
-                    "protocol": "TCP",
-                    "targetPort": self.target_port,
-                }
-            ],
-            "selector": {
-                "app": "minio",
-            },
-        }
+        },
+    )

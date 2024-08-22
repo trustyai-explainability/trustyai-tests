@@ -13,6 +13,7 @@ from ocp_resources.inference_service import InferenceService
 from ocp_resources.namespace import Namespace
 from ocp_resources.pod import Pod
 from ocp_resources.route import Route
+from ocp_resources.serving_runtime import ServingRuntime
 from ocp_utilities.monitoring import Prometheus
 
 from trustyai_tests.tests.constants import (
@@ -21,6 +22,11 @@ from trustyai_tests.tests.constants import (
     KNATIVE_API_GROUP,
     ODH_OPERATOR,
     RHOAI_OPERATOR,
+    OVMS_RUNTIME_NAME,
+    OVMS_QUAY_IMAGE,
+    OVMS,
+    OPENVINO_MODEL_FORMAT,
+    ONNX,
 )
 
 logger: logging.Logger = logging.getLogger(__name__)
@@ -73,6 +79,29 @@ def get_trustyai_pod(namespace: Namespace) -> Pod:
             return pod
 
     raise TrustyAIPodNotFoundError(f"No TrustyAI pod found in namespace {namespace.name}")
+
+
+def wait_for_trustyai_pod_running(namespace: Namespace) -> None:
+    """Wait for a TrustyAI service pod to be running in the given namespace"""
+
+    timeout = 60 * 20  # 20 minutes timeout
+    start_time = time()
+
+    while True:
+        if time() - start_time > timeout:
+            raise TimeoutError("TrustyAI service pod is not ready in time")
+
+        try:
+            trustyai_pod = get_trustyai_pod(namespace=namespace)
+
+            trustyai_pod.wait_for_status(status=trustyai_pod.Status.RUNNING)
+            return
+        except TrustyAIPodNotFoundError:
+            pass
+        except kubernetes.dynamic.exceptions.NotFoundError:
+            pass
+
+        sleep(5)
 
 
 def get_trustyai_service_route(namespace: Namespace) -> Route:
@@ -575,3 +604,49 @@ def verify_saliency_explanation(model_namespace: str, model: InferenceService, e
                 "score",
                 "confidence",
             ], f"Unexpected saliency results: {list(item.keys())}"
+
+
+def create_ovms_runtime(namespace: Namespace) -> ServingRuntime:
+    supported_model_formats = [
+        {"name": OPENVINO_MODEL_FORMAT, "version": "opset1", "autoSelect": True},
+        {"name": ONNX, "version": "1"},
+    ]
+    containers = [
+        {
+            "name": OVMS,
+            "image": OVMS_QUAY_IMAGE,
+            "args": [
+                "--port=8001",
+                "--rest_port=8888",
+                "--config_path=/models/model_config_list.json",
+                "--file_system_poll_wait_seconds=0",
+                "--grpc_bind_address=127.0.0.1",
+                "--rest_bind_address=127.0.0.1",
+            ],
+            "resources": {
+                "requests": {"cpu": "500m", "memory": "1Gi"},
+                "limits": {"cpu": "5", "memory": "1Gi"},
+            },
+        }
+    ]
+
+    return ServingRuntime(
+        name=OVMS_RUNTIME_NAME,
+        namespace=namespace.name,
+        containers=containers,
+        supported_model_formats=supported_model_formats,
+        multi_model=True,
+        protocol_versions=["grpc-v1"],
+        grpc_endpoint="port:8085",
+        grpc_data_endpoint="port:8001",
+        built_in_adapter={
+            "serverType": OVMS,
+            "runtimeManagementPort": 8888,
+            "memBufferBytes": 134217728,
+            "modelLoadingTimeoutMillis": 90000,
+        },
+        annotations={"enable-route": "true"},
+        label={
+            "name": f"modelmesh-serving-{OVMS_RUNTIME_NAME}-SR",
+        },
+    )

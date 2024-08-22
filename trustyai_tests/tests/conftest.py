@@ -6,18 +6,20 @@ from kubernetes.dynamic import DynamicClient
 from kubernetes.dynamic.exceptions import ConflictError
 from ocp_resources.configmap import ConfigMap
 from ocp_resources.namespace import Namespace
+from ocp_resources.pod import Pod
 from ocp_resources.resource import get_client
 from ocp_resources.role_binding import RoleBinding
+from ocp_resources.secret import Secret
+from ocp_resources.service import Service
 from ocp_resources.service_account import ServiceAccount
 from ocp_resources.trustyai_service import TrustyAIService
 
 from trustyai_tests.tests.constants import (
     TRUSTYAI_SERVICE,
-    MINIO_DATA_CONNECTION_NAME,
     ODH_OPERATOR,
 )
-from trustyai_tests.tests.minio import MinioSecret, MinioPod, MinioService
-from trustyai_tests.tests.utils import is_odh_or_rhoai
+from trustyai_tests.tests.minio import create_minio_secret, create_minio_pod, create_minio_service
+from trustyai_tests.tests.utils import is_odh_or_rhoai, wait_for_trustyai_pod_running
 
 
 def pytest_addoption(parser):
@@ -136,51 +138,28 @@ def trustyai_service(
         data={"filename": "data.csv", "format": "CSV"},
         metrics={"schedule": "5s"},
     ) as trusty:
+        wait_for_trustyai_pod_running(namespace=model_namespace)
         yield trusty
 
 
 @pytest.fixture(scope="class")
-def minio_service(client: DynamicClient, model_namespace: Namespace) -> Generator[MinioService, Any, None]:
-    with MinioService(
-        name="minio",
-        port=9000,
-        target_port=9000,
-        namespace=model_namespace.name,
-        client=client,
-    ) as ms:
-        yield ms
+def minio_service(client: DynamicClient, model_namespace: Namespace) -> Generator[Service, Any, None]:
+    with create_minio_service(namespace=model_namespace) as minio_service:
+        yield minio_service
 
 
 @pytest.fixture(scope="class")
-def minio_pod(client: DynamicClient, model_namespace: Namespace) -> Generator[MinioPod, Any, None]:
-    with MinioPod(
-        client=client,
-        name="minio",
-        namespace=model_namespace.name,
-        image="quay.io/trustyai/modelmesh-minio-examples@"
-        "sha256:e8360ec33837b347c76d2ea45cd4fea0b40209f77520181b15e534b101b1f323",
-    ) as mp:
-        yield mp
+def minio_pod(client: DynamicClient, model_namespace: Namespace) -> Generator[Pod, Any, None]:
+    with create_minio_pod(namespace=model_namespace) as minio_pod:
+        yield minio_pod
 
 
 @pytest.fixture(scope="class")
-def minio_secret(client: DynamicClient, model_namespace: Namespace) -> Generator[MinioSecret, Any, None]:
-    with MinioSecret(
-        client=client,
-        name=MINIO_DATA_CONNECTION_NAME,
-        namespace=model_namespace.name,
-        # Dummy AWS values
-        aws_access_key_id="VEhFQUNDRVNTS0VZ",
-        aws_default_region="dXMtc291dGg=",
-        aws_s3_bucket="bW9kZWxtZXNoLWV4YW1wbGUtbW9kZWxz",
-        aws_s3_endpoint="aHR0cDovL21pbmlvOjkwMDA=",
-        aws_secret_access_key="VEhFU0VDUkVUS0VZ",
-    ) as ms:
-        yield ms
+def minio_secret(client: DynamicClient, model_namespace: Namespace) -> Generator[Secret, Any, None]:
+    with create_minio_secret(namespace=model_namespace) as minio_secret:
+        yield minio_secret
 
 
 @pytest.fixture(scope="class")
-def minio_data_connection(
-    minio_service: MinioService, minio_pod: MinioPod, minio_secret: MinioSecret
-) -> Generator[MinioSecret, Any, None]:
+def minio_data_connection(minio_service: Service, minio_pod: Pod, minio_secret: Secret) -> Generator[Secret, Any, None]:
     yield minio_secret

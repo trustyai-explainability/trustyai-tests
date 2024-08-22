@@ -2,10 +2,10 @@ import pytest
 from kubernetes.dynamic import DynamicClient
 from ocp_resources.inference_service import InferenceService
 from ocp_resources.namespace import Namespace
+from ocp_resources.secret import Secret
 from ocp_resources.serving_runtime import ServingRuntime
 
 from trustyai_tests.tests.constants import KSERVE_API_GROUP
-from trustyai_tests.tests.minio import MinioSecret
 
 SKLEARN: str = "sklearn"
 XGBOOST: str = "xgboost"
@@ -18,7 +18,7 @@ MLSERVER_QUAY_IMAGE: str = (
 
 @pytest.fixture(scope="class")
 def mlserver_runtime(
-    client: DynamicClient, minio_data_connection: MinioSecret, model_namespace: Namespace
+    client: DynamicClient, minio_data_connection: Secret, model_namespace: Namespace
 ) -> ServingRuntime:
     supported_model_formats = [
         {"name": SKLEARN, "version": "0", "autoselect": "true"},
@@ -68,7 +68,7 @@ def mlserver_runtime(
 def gaussian_credit_model(
     client: DynamicClient,
     model_namespace: Namespace,
-    minio_data_connection: MinioSecret,
+    minio_data_connection: Secret,
     mlserver_runtime: ServingRuntime,
 ) -> InferenceService:
     with InferenceService(

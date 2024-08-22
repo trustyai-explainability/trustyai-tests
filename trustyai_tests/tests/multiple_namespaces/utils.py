@@ -1,8 +1,9 @@
 from ocp_resources.namespace import Namespace
 from ocp_resources.role_binding import RoleBinding
+from ocp_resources.secret import Secret
 from ocp_resources.service_account import ServiceAccount
 
-from trustyai_tests.tests.minio import MinioService, MinioPod, MinioSecret
+from trustyai_tests.tests.minio import create_minio_service, create_minio_pod, create_minio_secret
 
 
 def deploy_namespace_with_minio(name: str) -> Namespace:
@@ -15,20 +16,10 @@ def deploy_namespace_with_minio(name: str) -> Namespace:
     return namespace
 
 
-def deploy_minio(namespace: Namespace) -> MinioSecret:
-    minio_service = MinioService(name="minio", port=9000, target_port=9000, namespace=namespace.name)
-    minio_pod = MinioPod(
-        name="minio", namespace=namespace.name, image="quay.io/trustyai/modelmesh-minio-examples:gauss"
-    )
-    minio_secret = MinioSecret(
-        name="aws-connection-minio-data-connection",
-        namespace=namespace.name,
-        aws_access_key_id="VEhFQUNDRVNTS0VZ",
-        aws_default_region="dXMtc291dGg=",
-        aws_s3_bucket="bW9kZWxtZXNoLWV4YW1wbGUtbW9kZWxz",
-        aws_s3_endpoint="aHR0cDovL21pbmlvOjkwMDA=",
-        aws_secret_access_key="VEhFU0VDUkVUS0VZ",
-    )
+def deploy_minio(namespace: Namespace) -> Secret:
+    minio_service = create_minio_service(namespace=namespace)
+    minio_pod = create_minio_pod(namespace=namespace)
+    minio_secret = create_minio_secret(namespace=namespace)
 
     for resource in [minio_service, minio_pod, minio_secret]:
         resource.deploy()
