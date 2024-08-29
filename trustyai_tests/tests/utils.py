@@ -101,7 +101,7 @@ def wait_for_trustyai_pod_running(namespace: Namespace) -> None:
         except kubernetes.dynamic.exceptions.NotFoundError:
             pass
 
-        sleep(5)
+        sleep(30)
 
 
 def get_trustyai_service_route(namespace: Namespace) -> Route:
@@ -303,6 +303,9 @@ def send_data_to_inference_service(
     num_batches: int = None,
 ) -> None:
     inference_route = Route(namespace=namespace.name, name=inference_service.name)
+
+    initial_observations = 0
+
     token = get_ocp_token(namespace=namespace)
 
     files_processed = 0
@@ -317,6 +320,10 @@ def send_data_to_inference_service(
             with open(file_path, "r") as file:
                 data = file.read()
 
+            json_data = json.loads(data)
+            inputs = json_data.get("inputs", json_data.get("request", {}).get("inputs"))
+            file_observations = sum(input_data["shape"][0] for input_data in inputs) if inputs else 0
+
             url = f"https://{inference_route.host}{inference_route.instance.spec.path}/infer"
             headers = {"Authorization": f"Bearer {token}"}
 
@@ -324,11 +331,31 @@ def send_data_to_inference_service(
             while retry_count < max_retries:
                 try:
                     response = requests.post(url=url, headers=headers, data=data, verify=False)
-
                     response.raise_for_status()
-                    if response.status_code == 200:
+
+                    # Wait for TrustyAI to update
+                    sleep(5)
+
+                    # Check if TrustyAI has updated
+                    updated_model_metadata_list = parse_trustyai_model_metadata(
+                        model_metadata=get_trustyai_model_metadata(namespace=namespace).content
+                    )
+                    updated_model_metadata = next(
+                        (m for m in updated_model_metadata_list if m.model_name == inference_service.name), None
+                    )
+
+                    if (
+                        updated_model_metadata
+                        and updated_model_metadata.num_observations == initial_observations + file_observations
+                    ):
                         logger.info(f"Successfully sent data for file: {file_name}")
+                        initial_observations = updated_model_metadata.num_observations
                         break
+                    else:
+                        logger.info(f"New observations not updated in TrustyAI. Resending data for file: {file_name}")
+                        retry_count += 1
+                        if retry_count < max_retries:
+                            sleep(retry_delay)
                 except requests.exceptions.RequestException as e:
                     logger.error(f"Error sending data for file: {file_name}. Error: {str(e)}")
                     retry_count += 1
