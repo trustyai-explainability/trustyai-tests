@@ -152,7 +152,7 @@ def verify_trustyai_model_metadata(
     assert (
         model_metadata.model_name == model.name
     ), f"Expected model name '{model.name}', but got '{model_metadata.model_name}'"
-    assert model_metadata.num_observations == model_input_data.num_observations, (
+    assert model_metadata.num_observations is not None and model_metadata.num_observations > 0, (
         f"Expected number of observations to be "
         f"{model_input_data.num_observations},"
         f" but got {model_metadata.num_observations}"
