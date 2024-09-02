@@ -114,7 +114,7 @@ def db_credentials(model_namespace):
         namespace=model_namespace.name,
         string_data={
             "databaseKind": "mariadb",
-            # "databaseName": "trustyai_database",
+            "databaseName": "trustyai_database",
             "databaseUsername": "quarkus",
             "databasePassword": "quarkus",
             "databaseService": "mariadb",
@@ -138,9 +138,11 @@ def mariadb_operator() -> Generator:
         source="community-operators",
         operator_namespace=namespace,
         timeout=600,
+        install_plan_approval="Manual",
     )
+    sleep(60)
     yield
-    uninstall_operator(admin_client=client, name=name, operator_namespace=namespace)
+    uninstall_operator(admin_client=client, name=name, operator_namespace=namespace, clean_up_namespace=False)
 
 
 @pytest.fixture(scope="session")
@@ -150,7 +152,7 @@ def mariadb_operator_cr(mariadb_operator: None) -> MariadbOperator:
             condition="Deployed", status=mariadb_operator.Condition.Status.TRUE, timeout=10 * 60
         )
         wait_for_mariadb_operator_pods(mariadb_operator=mariadb_operator)
-        sleep(30)
+        sleep(60)
         yield mariadb_operator
 
 
@@ -158,6 +160,7 @@ def mariadb_operator_cr(mariadb_operator: None) -> MariadbOperator:
 def mariadb(model_namespace, db_credentials, mariadb_operator_cr: MariadbOperator) -> MariaDB:
     with MariaDB(yaml_file="trustyai_tests/manifests/mariadb.yaml") as mariadb:
         wait_for_mariadb_pods(mariadb=mariadb)
+        sleep(60)
         yield mariadb
 
 
@@ -200,7 +203,7 @@ def user_workload_monitoring_config(client: DynamicClient) -> ConfigMap:
 
 
 @pytest.fixture(scope="class")
-def trustyai_service(
+def trustyai_service_pvc(
     client: DynamicClient,
     model_namespace: Namespace,
     modelmesh_serviceaccount: Any,
@@ -213,6 +216,26 @@ def trustyai_service(
         namespace=model_namespace.name,
         storage={"format": "PVC", "folder": "/inputs", "size": "1Gi"},
         data={"filename": "data.csv", "format": "CSV"},
+        metrics={"schedule": "5s"},
+    ) as trusty:
+        wait_for_trustyai_pod_running(namespace=model_namespace)
+        yield trusty
+
+
+@pytest.fixture(scope="class")
+def trustyai_service_db(
+    client: DynamicClient,
+    model_namespace: Namespace,
+    mariadb,
+    modelmesh_serviceaccount: Any,
+    cluster_monitoring_config: ConfigMap,
+    user_workload_monitoring_config: ConfigMap,
+) -> TrustyAIService:
+    with TrustyAIService(
+        client=client,
+        name=TRUSTYAI_SERVICE,
+        namespace=model_namespace.name,
+        storage={"format": "DATABASE", "databaseConfigurations": "db-credentials"},
         metrics={"schedule": "5s"},
     ) as trusty:
         wait_for_trustyai_pod_running(namespace=model_namespace)

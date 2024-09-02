@@ -35,7 +35,7 @@ class TestDriftMetrics:
     """
 
     def test_gaussian_credit_model_metadata(
-        self, model_namespace: Namespace, trustyai_service: TrustyAIService, gaussian_credit_model: InferenceService
+        self, model_namespace: Namespace, trustyai_service_db: TrustyAIService, gaussian_credit_model: InferenceService
     ) -> None:
         wait_for_modelmesh_pods_registered(namespace=model_namespace)
 
@@ -60,7 +60,7 @@ class TestDriftMetrics:
         )
 
     def test_request_meanshift(
-        self, model_namespace: Namespace, trustyai_service: TrustyAIService, gaussian_credit_model: InferenceService
+        self, model_namespace: Namespace, trustyai_service_db: TrustyAIService, gaussian_credit_model: InferenceService
     ) -> None:
         verify_metric_request(
             namespace=model_namespace,
@@ -70,7 +70,7 @@ class TestDriftMetrics:
         )
 
     def test_schedule_meanshift(
-        self, model_namespace: Namespace, trustyai_service: TrustyAIService, gaussian_credit_model: InferenceService
+        self, model_namespace: Namespace, trustyai_service_db: TrustyAIService, gaussian_credit_model: InferenceService
     ) -> None:
         verify_metric_scheduling(
             namespace=model_namespace,
@@ -89,7 +89,7 @@ class TestDriftMetrics:
         )
 
     def test_request_fouriermmd(
-        self, model_namespace: Namespace, trustyai_service: TrustyAIService, gaussian_credit_model: InferenceService
+        self, model_namespace: Namespace, trustyai_service_db: TrustyAIService, gaussian_credit_model: InferenceService
     ) -> None:
         verify_metric_request(
             namespace=model_namespace,
@@ -99,7 +99,7 @@ class TestDriftMetrics:
         )
 
     def test_schedule_fouriermmd(
-        self, model_namespace: Namespace, trustyai_service: TrustyAIService, gaussian_credit_model: InferenceService
+        self, model_namespace: Namespace, trustyai_service_db: TrustyAIService, gaussian_credit_model: InferenceService
     ) -> None:
         verify_metric_scheduling(
             namespace=model_namespace,
@@ -118,7 +118,7 @@ class TestDriftMetrics:
         )
 
     def test_request_kstest(
-        self, model_namespace: Namespace, trustyai_service: TrustyAIService, gaussian_credit_model: InferenceService
+        self, model_namespace: Namespace, trustyai_service_db: TrustyAIService, gaussian_credit_model: InferenceService
     ) -> None:
         verify_metric_request(
             namespace=model_namespace,
@@ -128,7 +128,7 @@ class TestDriftMetrics:
         )
 
     def test_schedule_kstest_scheduling_request(
-        self, model_namespace: Namespace, trustyai_service: TrustyAIService, gaussian_credit_model: InferenceService
+        self, model_namespace: Namespace, trustyai_service_db: TrustyAIService, gaussian_credit_model: InferenceService
     ) -> None:
         verify_metric_scheduling(
             namespace=model_namespace,
@@ -145,7 +145,7 @@ class TestDriftMetrics:
         )
 
     def test_request_approxkstest(
-        self, model_namespace: Namespace, trustyai_service: TrustyAIService, gaussian_credit_model: InferenceService
+        self, model_namespace: Namespace, trustyai_service_db: TrustyAIService, gaussian_credit_model: InferenceService
     ) -> None:
         verify_metric_request(
             namespace=model_namespace,
@@ -155,7 +155,7 @@ class TestDriftMetrics:
         )
 
     def test_schedule_approxkstest(
-        self, model_namespace: Namespace, trustyai_service: TrustyAIService, gaussian_credit_model: InferenceService
+        self, model_namespace: Namespace, trustyai_service_db: TrustyAIService, gaussian_credit_model: InferenceService
     ) -> None:
         verify_metric_scheduling(
             namespace=model_namespace,

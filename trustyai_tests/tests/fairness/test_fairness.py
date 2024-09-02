@@ -67,7 +67,7 @@ class TestFairnessMetrics:
     def test_loan_model_metadata(
         self,
         model_namespace: Namespace,
-        trustyai_service: TrustyAIService,
+        trustyai_service_db: TrustyAIService,
         onnx_loan_model_alpha: InferenceService,
         onnx_loan_model_beta: InferenceService,
     ) -> None:
@@ -96,7 +96,7 @@ class TestFairnessMetrics:
     def test_request_spd(
         self,
         model_namespace: Namespace,
-        trustyai_service: TrustyAIService,
+        trustyai_service_db: TrustyAIService,
         onnx_loan_model_alpha: InferenceService,
         onnx_loan_model_beta: InferenceService,
     ) -> None:
@@ -111,7 +111,7 @@ class TestFairnessMetrics:
     def test_schedule_spd(
         self,
         model_namespace: Namespace,
-        trustyai_service: TrustyAIService,
+        trustyai_service_db: TrustyAIService,
         onnx_loan_model_alpha: InferenceService,
         onnx_loan_model_beta: InferenceService,
     ) -> None:
@@ -139,7 +139,7 @@ class TestFairnessMetrics:
     def test_request_dir(
         self,
         model_namespace: Namespace,
-        trustyai_service: TrustyAIService,
+        trustyai_service_db: TrustyAIService,
         onnx_loan_model_alpha: InferenceService,
         onnx_loan_model_beta: InferenceService,
     ) -> None:
@@ -154,7 +154,7 @@ class TestFairnessMetrics:
     def test_schedule_dir(
         self,
         model_namespace: Namespace,
-        trustyai_service: TrustyAIService,
+        trustyai_service_db: TrustyAIService,
         onnx_loan_model_alpha: InferenceService,
         onnx_loan_model_beta: InferenceService,
     ) -> None:
