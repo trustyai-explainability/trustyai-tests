@@ -35,7 +35,7 @@ class TestDriftMetrics:
     """
 
     def test_gaussian_credit_model_metadata(
-        self, model_namespace: Namespace, trustyai_service: TrustyAIService, gaussian_credit_model: InferenceService, caplog
+        self, model_namespace: Namespace, trustyai_service: TrustyAIService, gaussian_credit_model: InferenceService
     ) -> None:
         wait_for_modelmesh_pods_registered(namespace=model_namespace)
 
