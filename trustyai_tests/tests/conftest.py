@@ -25,14 +25,15 @@ from trustyai_tests.tests.utils import logger, is_odh_or_rhoai, wait_for_trustya
 def test_log(request):
     name = request.node.nodeid
     spacing = "=" * len(name)
+    padding = "=" * 130 - len(name)
     logger.info(
         "\n"
-        + "=============={}============================================\n".format(spacing)
-        + "======= Test '{}' STARTED ==================================\n".format(name)
-        + "=============={}============================================\n".format(spacing)
+        + "=============={}=============={}\n".format(spacing, padding)
+        + "======= Test '{}' STARTED ===={}\n".format(name, padding)
+        + "=============={}=============={}\n".format(spacing, padding)
     )
     yield
-    logger.info("\n======= Test '{}' COMPLETED ================================\n\n".format(name))
+    logger.info("\n" + "======= Test '{}' COMPLETED =={}\n\n".format(name, padding))
 
 
 def pytest_addoption(parser):
