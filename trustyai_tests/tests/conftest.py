@@ -1,5 +1,4 @@
 from typing import Any, Generator, Optional
-
 import pytest
 import yaml
 from kubernetes.dynamic import DynamicClient
@@ -19,8 +18,18 @@ from trustyai_tests.tests.constants import (
     ODH_OPERATOR,
 )
 from trustyai_tests.tests.minio import create_minio_secret, create_minio_pod, create_minio_service
-from trustyai_tests.tests.utils import is_odh_or_rhoai, wait_for_trustyai_pod_running
+from trustyai_tests.tests.utils import logger, is_odh_or_rhoai, wait_for_trustyai_pod_running
 
+@pytest.fixture(autouse=True)
+def test_log(request):
+    name = request.node.nodeid
+    spacing = "="*len(name)
+    logger.info("\n"+
+                "=============={}============================================\n".format(spacing)+
+                "======= Test '{}' STARTED ==================================\n".format(name)+
+                "=============={}============================================\n".format(spacing))
+    yield
+    logger.info("\n======= Test '{}' COMPLETED ================================\n\n".format(name))
 
 def pytest_addoption(parser):
     parser.addoption(
