@@ -73,7 +73,7 @@ def modelmesh_configmap(use_modelmesh_image) -> Optional[ConfigMap]:
     }
 
     if use_modelmesh_image:
-        config_data["modelMeshImage"] = {"name": "quay.io/opendatahub/modelmesh", "tag": "0.12.0.4-rc0"}
+        config_data["modelMeshImage"] = {"name": "quay.io/opendatahub/modelmesh", "tag": "fast"}
 
     with ConfigMap(
         name="model-serving-config",
