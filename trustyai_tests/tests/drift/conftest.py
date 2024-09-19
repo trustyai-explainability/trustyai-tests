@@ -4,6 +4,7 @@ from ocp_resources.inference_service import InferenceService
 from ocp_resources.namespace import Namespace
 from ocp_resources.secret import Secret
 from ocp_resources.serving_runtime import ServingRuntime
+from ocp_utilities.infra import cluster_resource
 
 from trustyai_tests.tests.constants import KSERVE_API_GROUP
 
@@ -42,7 +43,7 @@ def mlserver_runtime(
         }
     ]
 
-    with ServingRuntime(
+    with cluster_resource(ServingRuntime)(
         client=client,
         name=MLSERVER_RUNTIME_NAME,
         namespace=model_namespace.name,
@@ -71,7 +72,7 @@ def gaussian_credit_model(
     minio_data_connection: Secret,
     mlserver_runtime: ServingRuntime,
 ) -> InferenceService:
-    with InferenceService(
+    with cluster_resource(InferenceService)(
         client=client,
         name="gaussian-credit-model",
         namespace=model_namespace.name,

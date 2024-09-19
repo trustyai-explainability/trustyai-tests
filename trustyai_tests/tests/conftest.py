@@ -16,6 +16,7 @@ from ocp_resources.service import Service
 from ocp_resources.service_account import ServiceAccount
 from ocp_resources.trustyai_service import TrustyAIService
 from ocp_resources.mariadb_operator import MariadbOperator
+from ocp_utilities.infra import cluster_resource
 from ocp_utilities.operators import install_operator, uninstall_operator
 
 from trustyai_tests.tests.constants import (
@@ -75,7 +76,7 @@ def modelmesh_configmap(use_modelmesh_image) -> Optional[ConfigMap]:
     if use_modelmesh_image:
         config_data["modelMeshImage"] = {"name": "quay.io/opendatahub/modelmesh", "tag": "fast"}
 
-    with ConfigMap(
+    with cluster_resource(ConfigMap)(
         name="model-serving-config",
         namespace=namespace.name,
         data={"config.yaml": yaml.dump(config_data)},
@@ -85,7 +86,7 @@ def modelmesh_configmap(use_modelmesh_image) -> Optional[ConfigMap]:
 
 @pytest.fixture(scope="class")
 def model_namespace(client: DynamicClient) -> Namespace:
-    with Namespace(
+    with cluster_resource(Namespace)(
         client=client,
         name="test-namespace",
         label={"modelmesh-enabled": "true"},
@@ -109,7 +110,7 @@ def model_namespace(client: DynamicClient) -> Namespace:
 
 @pytest.fixture(scope="class")
 def db_credentials(model_namespace):
-    with Secret(
+    with cluster_resource(Secret)(
         name="db-credentials",
         namespace=model_namespace.name,
         string_data={
@@ -147,7 +148,9 @@ def mariadb_operator() -> Generator:
 
 @pytest.fixture(scope="session")
 def mariadb_operator_cr(mariadb_operator: None) -> MariadbOperator:
-    with MariadbOperator(yaml_file="trustyai_tests/manifests/mariadb-operator.yaml") as mariadb_operator:
+    with cluster_resource(MariadbOperator)(
+        yaml_file="trustyai_tests/manifests/mariadb-operator.yaml"
+    ) as mariadb_operator:
         mariadb_operator.wait_for_condition(
             condition="Deployed", status=mariadb_operator.Condition.Status.TRUE, timeout=10 * 60
         )
@@ -158,7 +161,7 @@ def mariadb_operator_cr(mariadb_operator: None) -> MariadbOperator:
 
 @pytest.fixture(scope="class")
 def mariadb(model_namespace, db_credentials, mariadb_operator_cr: MariadbOperator) -> MariaDB:
-    with MariaDB(yaml_file="trustyai_tests/manifests/mariadb.yaml") as mariadb:
+    with cluster_resource(MariaDB)(yaml_file="trustyai_tests/manifests/mariadb.yaml") as mariadb:
         wait_for_mariadb_pods(mariadb=mariadb)
         sleep(60)
         yield mariadb
@@ -176,7 +179,7 @@ def cluster_monitoring_config(client: DynamicClient) -> ConfigMap:
     name = "cluster-monitoring-config"
     namespace = "openshift-monitoring"
     try:
-        with ConfigMap(
+        with cluster_resource(ConfigMap)(
             name=name,
             namespace=namespace,
             data={"config.yaml": config_yaml},
@@ -192,7 +195,7 @@ def user_workload_monitoring_config(client: DynamicClient) -> ConfigMap:
     name = "user-workload-monitoring-config"
     namespace = "openshift-user-workload-monitoring"
     try:
-        with ConfigMap(
+        with cluster_resource(ConfigMap)(
             name=name,
             namespace=namespace,
             data={"config.yaml": config_yaml},
@@ -210,7 +213,7 @@ def trustyai_service_pvc(
     cluster_monitoring_config: ConfigMap,
     user_workload_monitoring_config: ConfigMap,
 ) -> TrustyAIService:
-    with TrustyAIService(
+    with cluster_resource(TrustyAIService)(
         client=client,
         name=TRUSTYAI_SERVICE,
         namespace=model_namespace.name,
@@ -231,7 +234,7 @@ def trustyai_service_db(
     cluster_monitoring_config: ConfigMap,
     user_workload_monitoring_config: ConfigMap,
 ) -> TrustyAIService:
-    with TrustyAIService(
+    with cluster_resource(TrustyAIService)(
         client=client,
         name=TRUSTYAI_SERVICE,
         namespace=model_namespace.name,

@@ -2,11 +2,12 @@ import pytest
 from kubernetes.dynamic import DynamicClient
 
 from ocp_resources.inference_service import InferenceService
+from ocp_utilities.infra import cluster_resource
 
 
 @pytest.fixture(scope="class")
 def bank_churn_model_lime_shap(client: DynamicClient, model_namespace: str) -> InferenceService:
-    with InferenceService(
+    with cluster_resource(InferenceService)(
         client=client,
         name="explainer-test-lime-shap",
         namespace=model_namespace,
@@ -25,7 +26,7 @@ def bank_churn_model_lime_shap(client: DynamicClient, model_namespace: str) -> I
 
 @pytest.fixture(scope="class")
 def bank_churn_model_lime(client: DynamicClient, model_namespace: str) -> InferenceService:
-    with InferenceService(
+    with cluster_resource(InferenceService)(
         client=client,
         name="explainer-test-lime",
         namespace=model_namespace,
@@ -52,7 +53,7 @@ def bank_churn_model_lime(client: DynamicClient, model_namespace: str) -> Infere
 
 @pytest.fixture(scope="class")
 def bank_churn_model_shap(client: DynamicClient, model_namespace: str) -> InferenceService:
-    with InferenceService(
+    with cluster_resource(InferenceService)(
         client=client,
         name="explainer-test-shap",
         namespace=model_namespace,

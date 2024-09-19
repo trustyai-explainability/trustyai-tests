@@ -2,6 +2,7 @@ from ocp_resources.namespace import Namespace
 from ocp_resources.pod import Pod
 from ocp_resources.secret import Secret
 from ocp_resources.service import Service
+from ocp_utilities.infra import cluster_resource
 
 from trustyai_tests.tests.constants import OPENDATAHUB_IO, MINIO_DATA_CONNECTION_NAME
 
@@ -30,7 +31,7 @@ def create_minio_pod(namespace: Namespace) -> Pod:
         }
     ]
 
-    return Pod(
+    return cluster_resource(Pod)(
         name=name,
         namespace=namespace.name,
         containers=containers,
@@ -40,7 +41,7 @@ def create_minio_pod(namespace: Namespace) -> Pod:
 
 
 def create_minio_service(namespace: Namespace) -> Service:
-    return Service(
+    return cluster_resource(Service)(
         name="minio",
         namespace=namespace.name,
         ports=[
@@ -58,7 +59,7 @@ def create_minio_service(namespace: Namespace) -> Service:
 
 
 def create_minio_secret(namespace: Namespace) -> Secret:
-    return Secret(
+    return cluster_resource(Secret)(
         name=MINIO_DATA_CONNECTION_NAME,
         namespace=namespace.name,
         data_dict={

@@ -15,6 +15,7 @@ from ocp_resources.namespace import Namespace
 from ocp_resources.pod import Pod
 from ocp_resources.route import Route
 from ocp_resources.serving_runtime import ServingRuntime
+from ocp_utilities.infra import cluster_resource
 from ocp_utilities.monitoring import Prometheus
 
 from trustyai_tests.tests.constants import (
@@ -658,7 +659,7 @@ def create_ovms_runtime(namespace: Namespace) -> ServingRuntime:
         }
     ]
 
-    return ServingRuntime(
+    return cluster_resource(ServingRuntime)(
         name=OVMS_RUNTIME_NAME,
         namespace=namespace.name,
         containers=containers,

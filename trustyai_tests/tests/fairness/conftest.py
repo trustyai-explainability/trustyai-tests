@@ -5,6 +5,7 @@ from ocp_resources.inference_service import InferenceService
 from ocp_resources.namespace import Namespace
 from ocp_resources.secret import Secret
 from ocp_resources.serving_runtime import ServingRuntime
+from ocp_utilities.infra import cluster_resource
 
 from trustyai_tests.tests.constants import (
     KSERVE_API_GROUP,
@@ -23,7 +24,7 @@ def ovms_runtime(minio_data_connection: Secret, model_namespace: Namespace) -> S
 def onnx_loan_model_alpha(
     client: DynamicClient, model_namespace: Namespace, minio_data_connection: Secret, ovms_runtime: ServingRuntime
 ) -> InferenceService:
-    with InferenceService(
+    with cluster_resource(InferenceService)(
         client=client,
         name="demo-loan-nn-onnx-alpha",
         namespace=model_namespace.name,
@@ -46,7 +47,7 @@ def onnx_loan_model_alpha(
 def onnx_loan_model_beta(
     client: DynamicClient, model_namespace: Namespace, minio_data_connection: Secret, ovms_runtime: ServingRuntime
 ) -> InferenceService:
-    with InferenceService(
+    with cluster_resource(InferenceService)(
         client=client,
         name="demo-loan-nn-onnx-beta",
         namespace=model_namespace.name,

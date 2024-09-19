@@ -2,12 +2,13 @@ from ocp_resources.namespace import Namespace
 from ocp_resources.role_binding import RoleBinding
 from ocp_resources.secret import Secret
 from ocp_resources.service_account import ServiceAccount
+from ocp_utilities.infra import cluster_resource
 
 from trustyai_tests.tests.minio import create_minio_service, create_minio_pod, create_minio_secret
 
 
 def deploy_namespace_with_minio(name: str) -> Namespace:
-    namespace = Namespace(name=name, label={"modelmesh-enabled": "true"})
+    namespace = cluster_resource(Namespace)(name=name, label={"modelmesh-enabled": "true"})
     namespace.deploy()
     namespace.wait_for_status(status=Namespace.Status.ACTIVE)
     deploy_service_account(namespace=namespace)

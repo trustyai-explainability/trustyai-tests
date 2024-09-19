@@ -5,6 +5,7 @@ from ocp_resources.inference_service import InferenceService
 from ocp_resources.namespace import Namespace
 from ocp_resources.serving_runtime import ServingRuntime
 from ocp_resources.trustyai_service import TrustyAIService
+from ocp_utilities.infra import cluster_resource
 
 from trustyai_tests.tests.constants import (
     KSERVE_API_GROUP,
@@ -72,7 +73,7 @@ def onnx_loan_models_in_namespaces(
 ) -> Generator[list[InferenceService], Any, None]:
     inference_services = []
     for namespace, ovms_runtime in zip(model_namespaces_with_minio, ovms_runtimes_in_namespaces):
-        inference_service = InferenceService(
+        inference_service = cluster_resource(InferenceService)(
             name="demo-loan-nn-onnx-alpha",
             namespace=namespace.name,
             predictor={
