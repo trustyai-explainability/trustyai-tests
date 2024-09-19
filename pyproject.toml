@@ -15,6 +15,7 @@ pytest = "^8.2.1"
 openshift-python-utilities = "^5.0.51"
 setuptools = "^70.0.0"
 
+openshift-python-wrapper-data-collector = "^1.0.76"
 [tool.mypy]
 no_implicit_optional = true
 show_error_codes = true

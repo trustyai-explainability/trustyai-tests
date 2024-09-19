@@ -31,6 +31,20 @@ from trustyai_tests.tests.utils import (
 from trustyai_tests.tests.utils import logger, is_odh_or_rhoai, wait_for_trustyai_pod_running
 
 
+def pytest_addoption(parser):
+    data_collector_group = parser.getgroup(name="DataCollector")
+
+    # Log collector group
+    data_collector_group.addoption(
+        "--data-collector",
+        help="pass YAML file path to enable data collector to capture additional logs and resources",
+    )
+
+    parser.addoption(
+        "--use-modelmesh-image", action="store_true", default=False, help="Include modelMeshImage in the ConfigMap"
+    )
+
+
 @pytest.fixture(autouse=True)
 def test_log(request):
     name = request.node.nodeid
@@ -44,12 +58,6 @@ def test_log(request):
     )
     yield
     logger.info(f"\n======= Test '{name}' COMPLETED =={padding}\n\n")
-
-
-def pytest_addoption(parser):
-    parser.addoption(
-        "--use-modelmesh-image", action="store_true", default=False, help="Include modelMeshImage in the ConfigMap"
-    )
 
 
 @pytest.fixture(scope="session")

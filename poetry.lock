@@ -860,12 +860,12 @@ xmltodict = ">=0.13.0,<0.14.0"
 
 [[package]]
 name = "openshift-python-wrapper-data-collector"
-version = "1.0.71"
+version = "1.0.76"
 description = "Data collector for https://github.com/openshift/openshift-python-wrapper when running with PyTest"
 optional = false
 python-versions = "<4.0,>=3.8"
 files = [
-    {file = "openshift_python_wrapper_data_collector-1.0.71.tar.gz", hash = "sha256:7bee35c0e2cef4a956f8ea02bf73fc6725d134554fec41e15e2e0304f85bb250"},
+    {file = "openshift_python_wrapper_data_collector-1.0.76.tar.gz", hash = "sha256:a7037fe22af559ca0d365d98661fa15d11990cf89b24990e188e13e159fdecaa"},
 ]
 
 [package.dependencies]
@@ -1628,4 +1628,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "87262757a6190a9c008ea33f09efa3b9eae2644c5232d7347623c5cf083362e0"
+content-hash = "a743519b0998de7ebd1c4942848b23a9313efa606ec09e5b4dfe94403c695f9e"
