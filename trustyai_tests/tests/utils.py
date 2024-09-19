@@ -4,12 +4,13 @@ import logging
 import os
 import subprocess
 from time import time, sleep
-from typing import Any
+from typing import Any, List
 
 import kubernetes
 import requests
 from ocp_resources.cluster_service_version import ClusterServiceVersion
 from ocp_resources.inference_service import InferenceService
+from ocp_resources.mariadb_operator import MariadbOperator
 from ocp_resources.namespace import Namespace
 from ocp_resources.pod import Pod
 from ocp_resources.route import Route
@@ -677,3 +678,58 @@ def create_ovms_runtime(namespace: Namespace) -> ServingRuntime:
             "name": f"modelmesh-serving-{OVMS_RUNTIME_NAME}-SR",
         },
     )
+
+
+def wait_for_mariadb_operator_pods(mariadb_operator: MariadbOperator, timeout: int = 300) -> None:
+    expected_pods: List[str] = [
+        "mariadb-operator",
+        "mariadb-operator-cert-controller",
+        "mariadb-operator-helm-controller-manager",
+        "mariadb-operator-webhook",
+    ]
+
+    start_time = time()
+
+    for pod_prefix in expected_pods:
+        while True:
+            if time() - start_time > timeout:
+                raise TimeoutError(f"Timed out waiting for MariaDB Operator pods after {timeout} seconds")
+
+            pods = Pod.get(namespace=mariadb_operator.namespace)
+            matching_pods = [pod for pod in pods if pod.name.startswith(pod_prefix)]
+
+            if matching_pods:
+                pod = matching_pods[0]
+                try:
+                    pod.wait_for_status(status=Pod.Status.RUNNING, timeout=timeout - (time() - start_time))
+                    break
+                except TimeoutError:
+                    raise TimeoutError(f"Timed out waiting for {pod.name} to reach Running status")
+            else:
+                print(f"Waiting for {pod_prefix} pod to be created...")
+                sleep(5)  # Wait for 5 seconds before checking again
+
+
+def wait_for_mariadb_pods(mariadb, timeout: int = 300) -> None:
+    start_time = time()
+    namespace = mariadb.namespace
+    label_key = "app.kubernetes.io/instance"
+    label_value = "mariadb"
+
+    while True:
+        if time() - start_time > timeout:
+            raise TimeoutError(f"Timed out waiting for MariaDB pod after {timeout} seconds")
+
+        pods = Pod.get(namespace=namespace)
+        matching_pods = [pod for pod in pods if pod.labels.get(label_key) == label_value]
+
+        if matching_pods:
+            pod = matching_pods[0]
+            try:
+                remaining_time = timeout - (time() - start_time)
+                pod.wait_for_status(status=Pod.Status.RUNNING, timeout=remaining_time)
+                return
+            except TimeoutError:
+                raise TimeoutError(f"Timed out waiting for MariaDB pod {pod.name} to reach Running status")
+        else:
+            sleep(5)

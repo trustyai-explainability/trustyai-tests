@@ -1,0 +1,56 @@
+# TODO: Replace with wrapper resource
+kind: MariaDB
+apiVersion: k8s.mariadb.com/v1alpha1
+metadata:
+  name: mariadb
+  namespace: test-namespace
+spec:
+  connection:
+    secretName: mariadb-conn
+    secretTemplate:
+      key: dsn
+  database: trustyai_database
+  galera:
+    enabled: false
+  metrics:
+    enabled: false
+    passwordSecretKeyRef:
+      generate: true
+      key: password
+      name: mariadb-metrics
+  myCnf: |
+    [mariadb]
+    bind-address=*
+    default_storage_engine=InnoDB
+    binlog_format=row
+    innodb_autoinc_lock_mode=2
+    innodb_buffer_pool_size=1024M
+    max_allowed_packet=256M
+  passwordSecretKeyRef:
+    generate: false
+    key: databasePassword
+    name: db-credentials
+  primaryConnection:
+    secretName: mariadb-conn-primary
+    secretTemplate:
+      key: dsn
+  primaryService:
+    type: ClusterIP
+  replicas: 1
+  rootPasswordSecretKeyRef:
+    generate: false
+    key: databasePassword
+    name: db-credentials
+  secondaryConnection:
+    secretName: mariadb-conn-secondary
+    secretTemplate:
+      key: dsn
+  secondaryService:
+    type: ClusterIP
+  service:
+    type: ClusterIP
+  storage:
+    size: 1Gi
+  updateStrategy:
+    type: ReplicasFirstPrimaryLast
+  username: quarkus

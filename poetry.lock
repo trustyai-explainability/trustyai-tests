@@ -811,12 +811,12 @@ signedtoken = ["cryptography (>=3.0.0)", "pyjwt (>=2.0.0,<3)"]
 
 [[package]]
 name = "openshift-python-utilities"
-version = "5.0.62"
+version = "5.0.64"
 description = "A utilities repository for https://github.com/RedHatQE/openshift-python-wrapper"
 optional = false
 python-versions = "<4.0,>=3.8"
 files = [
-    {file = "openshift_python_utilities-5.0.62.tar.gz", hash = "sha256:6eb32e973412cfb0df4d0ad2e619862d7d486c72fa28d8b81bc5c1e4d23966e0"},
+    {file = "openshift_python_utilities-5.0.64.tar.gz", hash = "sha256:69d1fd17743c347b5ef16e5202dabb031511d66bd763f1786bf21848a672504c"},
 ]
 
 [package.dependencies]
@@ -834,12 +834,12 @@ timeout-sampler = ">=0.0.17"
 
 [[package]]
 name = "openshift-python-wrapper"
-version = "10.0.75"
+version = "10.0.84"
 description = "Wrapper around https://github.com/kubernetes-client/python"
 optional = false
 python-versions = "<4.0,>=3.8"
 files = [
-    {file = "openshift_python_wrapper-10.0.75.tar.gz", hash = "sha256:13334052e6049c62464d45502e2cf79ee24247230a2146556114981a76bc5ad9"},
+    {file = "openshift_python_wrapper-10.0.84.tar.gz", hash = "sha256:11b54d7aa4f5719e76b6bf9a7dfc48ea0b1d32b0b24dcbcdc09402e9cf37aa2d"},
 ]
 
 [package.dependencies]
@@ -849,7 +849,7 @@ colorlog = ">=6.7.0,<7.0.0"
 jinja2 = ">=3.1.2,<4.0.0"
 kubernetes = ">=30.0.0,<31.0.0"
 packaging = ">=23.1,<24.0"
-pyhelper-utils = ">=0.0.37,<0.0.38"
+pyhelper-utils = ">=0.0.39,<0.0.40"
 pytest = ">=8.0.0,<9.0.0"
 python-benedict = ">=0.33.0,<0.34.0"
 python-simple-logger = ">=1.0.6"
@@ -1086,12 +1086,12 @@ windows-terminal = ["colorama (>=0.4.6)"]
 
 [[package]]
 name = "pyhelper-utils"
-version = "0.0.37"
+version = "0.0.39"
 description = "Collective utility functions for python projects"
 optional = false
 python-versions = "<4.0,>=3.8"
 files = [
-    {file = "pyhelper_utils-0.0.37.tar.gz", hash = "sha256:b5585dbcf7ab779435b218ce2b14c02e69d6d4256bc53adac8297120a550c0b5"},
+    {file = "pyhelper_utils-0.0.39.tar.gz", hash = "sha256:4d2955098e17abec1e822e39824132e2651486a7ff156b6c23cecda9bd7752ea"},
 ]
 
 [package.dependencies]
