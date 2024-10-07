@@ -13,6 +13,11 @@ from trustyai_tests.tests.utils import (
 )
 
 
+@pytest.mark.parametrize(
+    "trustyai_services_in_namespaces",
+    [pytest.param({"storage_type": "pvc"}, id="pvc"), pytest.param({"storage_type": "db"}, id="db")],
+    indirect=True,
+)
 @pytest.mark.openshift
 @pytest.mark.heavy
 class TestMultipleNamespaces:

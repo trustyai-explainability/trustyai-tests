@@ -32,18 +32,29 @@ def model_namespaces_with_minio() -> Generator[list[Namespace], Any, None]:
 
 @pytest.fixture(scope="class")
 def trustyai_services_in_namespaces(
+    request,
     model_namespaces_with_minio: list[Namespace],
 ) -> Generator[list[TrustyAIService], Any, None]:
     trustyai_services = []
+    storage_type = request.param["storage_type"]
+    metrics = {"schedule": "5s"}
 
     for namespace in model_namespaces_with_minio:
-        trustyai_service = TrustyAIService(
-            name=TRUSTYAI_SERVICE,
-            namespace=namespace.name,
-            storage={"format": "PVC", "folder": "/inputs", "size": "1Gi"},
-            data={"filename": "data.csv", "format": "CSV"},
-            metrics={"schedule": "5s"},
-        )
+        if storage_type == "pvc":
+            trustyai_service = TrustyAIService(
+                name=TRUSTYAI_SERVICE,
+                namespace=namespace.name,
+                storage={"format": "PVC", "folder": "/inputs", "size": "1Gi"},
+                data={"filename": "data.csv", "format": "CSV"},
+                metrics=metrics,
+            )
+        else:  # run with db
+            trustyai_service = TrustyAIService(
+                name=TRUSTYAI_SERVICE,
+                namespace=namespace.name,
+                storage={"format": "DATABASE", "databaseConfigurations": "db-credentials"},
+                metrics=metrics,
+            )
         trustyai_service.deploy()
         trustyai_services.append(trustyai_service)
     yield trustyai_services

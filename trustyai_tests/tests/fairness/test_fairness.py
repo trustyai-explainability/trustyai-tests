@@ -49,6 +49,11 @@ def get_json_data(inference_service: InferenceService) -> dict[str, Any]:
     }
 
 
+@pytest.mark.parametrize(
+    "trustyai_service",
+    [pytest.param({"storage_type": "pvc"}, id="pvc"), pytest.param({"storage_type": "db"}, id="db")],
+    indirect=True,
+)
 @pytest.mark.openshift
 class TestFairnessMetrics:
     """
@@ -67,7 +72,7 @@ class TestFairnessMetrics:
     def test_loan_model_metadata(
         self,
         model_namespace: Namespace,
-        trustyai_service_db: TrustyAIService,
+        trustyai_service: TrustyAIService,
         onnx_loan_model_alpha: InferenceService,
         onnx_loan_model_beta: InferenceService,
     ) -> None:
@@ -96,7 +101,7 @@ class TestFairnessMetrics:
     def test_request_spd(
         self,
         model_namespace: Namespace,
-        trustyai_service_db: TrustyAIService,
+        trustyai_service: TrustyAIService,
         onnx_loan_model_alpha: InferenceService,
         onnx_loan_model_beta: InferenceService,
     ) -> None:
@@ -111,7 +116,7 @@ class TestFairnessMetrics:
     def test_schedule_spd(
         self,
         model_namespace: Namespace,
-        trustyai_service_db: TrustyAIService,
+        trustyai_service: TrustyAIService,
         onnx_loan_model_alpha: InferenceService,
         onnx_loan_model_beta: InferenceService,
     ) -> None:
@@ -125,6 +130,7 @@ class TestFairnessMetrics:
     def test_spd_prometheus_query(
         self,
         model_namespace: Namespace,
+        trustyai_service: TrustyAIService,
         onnx_loan_model_alpha: InferenceService,
         onnx_loan_model_beta: InferenceService,
     ) -> None:
@@ -139,7 +145,7 @@ class TestFairnessMetrics:
     def test_request_dir(
         self,
         model_namespace: Namespace,
-        trustyai_service_db: TrustyAIService,
+        trustyai_service: TrustyAIService,
         onnx_loan_model_alpha: InferenceService,
         onnx_loan_model_beta: InferenceService,
     ) -> None:
@@ -154,7 +160,7 @@ class TestFairnessMetrics:
     def test_schedule_dir(
         self,
         model_namespace: Namespace,
-        trustyai_service_db: TrustyAIService,
+        trustyai_service: TrustyAIService,
         onnx_loan_model_alpha: InferenceService,
         onnx_loan_model_beta: InferenceService,
     ) -> None:
@@ -168,6 +174,7 @@ class TestFairnessMetrics:
     def test_dir_prometheus_query(
         self,
         model_namespace: Namespace,
+        trustyai_service: TrustyAIService,
         onnx_loan_model_alpha: InferenceService,
         onnx_loan_model_beta: InferenceService,
     ) -> None:

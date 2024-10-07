@@ -203,43 +203,38 @@ def user_workload_monitoring_config(client: DynamicClient) -> ConfigMap:
 
 
 @pytest.fixture(scope="class")
-def trustyai_service_pvc(
+def trustyai_service(
+    request,
     client: DynamicClient,
     model_namespace: Namespace,
     modelmesh_serviceaccount: Any,
     cluster_monitoring_config: ConfigMap,
     user_workload_monitoring_config: ConfigMap,
 ) -> TrustyAIService:
-    with TrustyAIService(
-        client=client,
-        name=TRUSTYAI_SERVICE,
-        namespace=model_namespace.name,
-        storage={"format": "PVC", "folder": "/inputs", "size": "1Gi"},
-        data={"filename": "data.csv", "format": "CSV"},
-        metrics={"schedule": "5s"},
-    ) as trusty:
-        wait_for_trustyai_pod_running(namespace=model_namespace)
-        yield trusty
-
-
-@pytest.fixture(scope="class")
-def trustyai_service_db(
-    client: DynamicClient,
-    model_namespace: Namespace,
-    mariadb,
-    modelmesh_serviceaccount: Any,
-    cluster_monitoring_config: ConfigMap,
-    user_workload_monitoring_config: ConfigMap,
-) -> TrustyAIService:
-    with TrustyAIService(
-        client=client,
-        name=TRUSTYAI_SERVICE,
-        namespace=model_namespace.name,
-        storage={"format": "DATABASE", "databaseConfigurations": "db-credentials"},
-        metrics={"schedule": "5s"},
-    ) as trusty:
-        wait_for_trustyai_pod_running(namespace=model_namespace)
-        yield trusty
+    storage_type = request.param["storage_type"]
+    metrics = {"schedule": "5s"}
+    if storage_type == "pvc":
+        with TrustyAIService(
+            client=client,
+            name=TRUSTYAI_SERVICE,
+            namespace=model_namespace.name,
+            storage={"format": "PVC", "folder": "/inputs", "size": "1Gi"},
+            data={"filename": "data.csv", "format": "CSV"},
+            metrics=metrics,
+        ) as trusty:
+            wait_for_trustyai_pod_running(namespace=model_namespace)
+            yield trusty
+    else:  # running with db
+        request.getfixturevalue("mariadb")
+        with TrustyAIService(
+            client=client,
+            name=TRUSTYAI_SERVICE,
+            namespace=model_namespace.name,
+            storage={"format": "DATABASE", "databaseConfigurations": "db-credentials"},
+            metrics=metrics,
+        ) as trusty:
+            wait_for_trustyai_pod_running(namespace=model_namespace)
+            yield trusty
 
 
 @pytest.fixture(scope="class")
