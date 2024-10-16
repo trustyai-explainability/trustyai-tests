@@ -33,6 +33,9 @@ from trustyai_tests.tests.constants import (
 logger: logging.Logger = logging.getLogger(__name__)
 
 
+TENSORFLOW = "tensorflow"
+
+
 class TrustyAIPodNotFoundError(Exception):
     pass
 
@@ -677,6 +680,71 @@ def create_ovms_runtime(namespace: Namespace) -> ServingRuntime:
         label={
             "name": f"modelmesh-serving-{OVMS_RUNTIME_NAME}-SR",
         },
+    )
+
+
+def create_kserve_ovms_runtime(namespace: Namespace) -> ServingRuntime:
+    supported_model_formats = [
+        {"name": OPENVINO_MODEL_FORMAT, "version": "opset13", "autoSelect": True},
+        {"name": ONNX, "version": "1"},
+        {"name": TENSORFLOW, "version": "1"},
+        {"name": TENSORFLOW, "version": "2"},
+        {"name": "paddle", "version": "1"},
+        {"name": "pytorch", "version": "2"},
+    ]
+    containers = [
+        {
+            "name": "kserve-container",
+            "image": "quay.io/opendatahub/openvino_model_server:stable-nightly-2024-05-26",
+            "args": [
+                "--model_name={{.Name}}" "--port=8001",
+                "--rest_port=8888",
+                "--model_path=/mnt/models",
+                "--file_system_poll_wait_seconds=0",
+                "--grpc_bind_address=0.0.0.0",
+                "--rest_bind_address=0.0.0.0",
+                "--target_device=AUTO",
+                "--metrics_enable",
+            ],
+            "ports": [
+                {
+                    "containerPort": 8888,
+                    "protocol": "TCP",
+                }
+            ],
+            "volumeMounts": [
+                {
+                    "mountPath": "/dev/shm",
+                    "name": "shm",
+                }
+            ],
+        }
+    ]
+
+    return ServingRuntime(
+        name=OVMS_RUNTIME_NAME,
+        namespace=namespace.name,
+        containers=containers,
+        supported_model_formats=supported_model_formats,
+        multi_model=False,
+        protocol_versions=["v2", "grpc-v2"],
+        built_in_adapter={
+            "serverType": OVMS,
+            "runtimeManagementPort": 8888,
+            "memBufferBytes": 134217728,
+            "modelLoadingTimeoutMillis": 90000,
+        },
+        annotations={
+            "opendatahub.io/accelerator-name": "",
+            "opendatahub.io/apiProtocol": "REST",
+            "opendatahub.io/recommended-accelerators": '["nvidia.com/gpu"]',
+            "opendatahub.io/template-display-name": "OpenVINO Model Server",
+            "opendatahub.io/template-name": "kserve-ovms",
+            "openshift.io/display-name": "ovms-1.x",
+            "prometheus.io/path": "/metrics",
+            "prometheus.io/port": "8888",
+        },
+        volumes=[{"name": "shm", "emptyDir": {"medium": "Memory", "sizeLimit": "2Gi"}}],
     )
 
 
