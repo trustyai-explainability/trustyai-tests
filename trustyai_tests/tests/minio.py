@@ -24,8 +24,7 @@ def create_minio_pod(namespace: Namespace) -> Pod:
                     "value": "THESECRETKEY",
                 },
             ],
-            "image": "quay.io/trustyai/modelmesh-minio-examples@"
-            "sha256:e8360ec33837b347c76d2ea45cd4fea0b40209f77520181b15e534b101b1f323",
+            "image": "quay.io/trustyai/modelmesh-minio-examples:latest",
             "name": name,
         }
     ]

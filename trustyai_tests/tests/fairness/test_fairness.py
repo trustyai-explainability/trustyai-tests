@@ -1,3 +1,4 @@
+from time import sleep
 from typing import Any
 
 import pytest
@@ -313,3 +314,71 @@ class TestFairnessMetricsDB:
                 prometheus_query=f"trustyai_{Metric.DIR.value}" f'{{namespace="{model_namespace.name}"}}',
                 metric_name=Metric.DIR.value,
             )
+
+
+@pytest.mark.openshift
+class TestFairnessMetricsKserve:
+    """
+    Verifies the different fairness metrics available in TrustyAI, using Kserve model serving.
+
+    1. Send data to the inference_service (onnx_loan_model_alpha).
+    2. Send data to the inference_service.
+    3. Apply name mappings.
+    4. For each metric:
+        4.1. Send a basic request and verify the response.
+        4.2. Send a schedule request and verify the response.
+        4.3. Verify that the metric has reached Prometheus.
+    """
+
+    def test_loan_model_metadata_kserve(
+        self,
+        model_namespace: Namespace,
+        trustyai_service_pvc: TrustyAIService,
+        onnx_loan_model_alpha_kserve: InferenceService,
+    ) -> None:
+        sleep(600)  # Wait for the kserve pods to be registered by Trusty
+
+        send_data_to_inference_service(
+            inference_service=onnx_loan_model_alpha_kserve,
+            namespace=model_namespace,
+            data_path=INPUT_DATA_PATH,
+            type="kserve",
+        )
+
+        apply_trustyai_name_mappings(
+            namespace=model_namespace,
+            inference_service=onnx_loan_model_alpha_kserve,
+            input_mappings=INPUT_MAPPINGS,
+            output_mappings=OUTPUT_MAPPINGS,
+        )
+
+        verify_trustyai_model_metadata(
+            namespace=model_namespace,
+            model=onnx_loan_model_alpha_kserve,
+            data_path=INPUT_DATA_PATH,
+        )
+
+    def test_request_spd_kserve(
+        self,
+        model_namespace: Namespace,
+        trustyai_service_pvc: TrustyAIService,
+        onnx_loan_model_alpha_kserve: InferenceService,
+    ) -> None:
+        verify_metric_request(
+            namespace=model_namespace,
+            endpoint=get_metric_endpoint(metric=Metric.SPD),
+            expected_metric_name=Metric.SPD.value.upper(),
+            json_data=get_json_data(onnx_loan_model_alpha_kserve),
+        )
+
+    def test_schedule_spd_kserve(
+        self,
+        model_namespace: Namespace,
+        trustyai_service_pvc: TrustyAIService,
+        onnx_loan_model_alpha_kserve: InferenceService,
+    ) -> None:
+        verify_metric_scheduling(
+            namespace=model_namespace,
+            endpoint=get_metric_endpoint(metric=Metric.SPD, schedule=True),
+            json_data=get_json_data(onnx_loan_model_alpha_kserve),
+        )

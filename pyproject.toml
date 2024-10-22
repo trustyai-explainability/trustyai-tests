@@ -8,8 +8,8 @@ packages = [{include = "trustyai_tests"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-openshift-python-wrapper = "^10.0.59"
-kubernetes = "^30.0.0"
+openshift-python-wrapper = "^10.0.99"
+kubernetes = "^31.0.0"
 pyyaml = "^6.0.1"
 pytest = "^8.2.1"
 openshift-python-utilities = "^5.0.51"

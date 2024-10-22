@@ -5,7 +5,7 @@ import pytest
 import yaml
 from kubernetes.dynamic import DynamicClient
 from kubernetes.dynamic.exceptions import ConflictError
-from ocp_resources.configmap import ConfigMap
+from ocp_resources.config_map import ConfigMap
 from ocp_resources.maria_db import MariaDB
 from ocp_resources.namespace import Namespace
 from ocp_resources.pod import Pod
@@ -88,8 +88,13 @@ def model_namespace(client: DynamicClient) -> Namespace:
     with Namespace(
         client=client,
         name="test-namespace",
-        label={"modelmesh-enabled": "true"},
         delete_timeout=600,
+        annotations={
+            "openshift.io/description": "",
+            "openshift.io/display-name": "",
+            "openshift.io/requester": "htpasswd-cluster-admin-user",
+        },
+        label={"modelmesh-enabled": "true"},
     ) as ns:
         ns.wait_for_status(status=Namespace.Status.ACTIVE, timeout=120)
         user_name = "test-user"
