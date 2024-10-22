@@ -333,7 +333,8 @@ def send_data_to_inference_service(
                 url = f"https://{inference_route.host}{inference_route.instance.spec.path}/infer"
             elif type == "kserve":
                 inference_route = Service(namespace=namespace.name, name=f"{inference_service.name}-predictor")
-                url = f"{inference_route.instance.status["url"]}/v2/models/{inference_service.name}/infer"
+                temp_url = inference_route.instance.status["url"]
+                url = f"{temp_url}/v2/models/{inference_service.name}/infer"
 
             headers = {"Authorization": f"Bearer {token}"}
 
