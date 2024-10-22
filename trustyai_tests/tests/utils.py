@@ -14,6 +14,7 @@ from ocp_resources.mariadb_operator import MariadbOperator
 from ocp_resources.namespace import Namespace
 from ocp_resources.pod import Pod
 from ocp_resources.route import Route
+from ocp_resources.service_serving_knative_dev import Service
 from ocp_resources.serving_runtime import ServingRuntime
 from ocp_utilities.monitoring import Prometheus
 
@@ -302,12 +303,11 @@ def send_data_to_inference_service(
     namespace: Namespace,
     inference_service: InferenceService,
     data_path: str,
+    type: str = "modelmesh",
     max_retries: int = 5,
     retry_delay: int = 1,
     num_batches: int = None,
 ) -> None:
-    inference_route = Route(namespace=namespace.name, name=inference_service.name)
-
     initial_observations = 0
 
     token = get_ocp_token(namespace=namespace)
@@ -328,7 +328,13 @@ def send_data_to_inference_service(
             inputs = json_data.get("inputs", json_data.get("request", {}).get("inputs"))
             file_observations = sum(input_data["shape"][0] for input_data in inputs) if inputs else 0
 
-            url = f"https://{inference_route.host}{inference_route.instance.spec.path}/infer"
+            if type == "modelmesh":
+                inference_route = Route(namespace=namespace.name, name=inference_service.name)
+                url = f"https://{inference_route.host}{inference_route.instance.spec.path}/infer"
+            elif type == "kserve":
+                inference_route = Service(namespace=namespace.name, name=f"{inference_service.name}-predictor")
+                url = f"{inference_route.instance.status["url"]}/v2/models/{inference_service.name}/infer"
+
             headers = {"Authorization": f"Bearer {token}"}
 
             retry_count = 0
@@ -687,17 +693,18 @@ def create_kserve_ovms_runtime(namespace: Namespace) -> ServingRuntime:
     supported_model_formats = [
         {"name": OPENVINO_MODEL_FORMAT, "version": "opset13", "autoSelect": True},
         {"name": ONNX, "version": "1"},
-        {"name": TENSORFLOW, "version": "1"},
-        {"name": TENSORFLOW, "version": "2"},
-        {"name": "paddle", "version": "1"},
-        {"name": "pytorch", "version": "2"},
+        {"name": TENSORFLOW, "version": "1", "autoSelect": True},
+        {"name": TENSORFLOW, "version": "2", "autoSelect": True},
+        {"name": "paddle", "version": "2", "autoSelect": True},
+        {"name": "pytorch", "version": "2", "autoSelect": True},
     ]
     containers = [
         {
             "name": "kserve-container",
             "image": "quay.io/opendatahub/openvino_model_server:stable-nightly-2024-05-26",
             "args": [
-                "--model_name={{.Name}}" "--port=8001",
+                "--model_name={{.Name}}",
+                "--port=8001",
                 "--rest_port=8888",
                 "--model_path=/mnt/models",
                 "--file_system_poll_wait_seconds=0",
@@ -728,12 +735,6 @@ def create_kserve_ovms_runtime(namespace: Namespace) -> ServingRuntime:
         supported_model_formats=supported_model_formats,
         multi_model=False,
         protocol_versions=["v2", "grpc-v2"],
-        built_in_adapter={
-            "serverType": OVMS,
-            "runtimeManagementPort": 8888,
-            "memBufferBytes": 134217728,
-            "modelLoadingTimeoutMillis": 90000,
-        },
         annotations={
             "opendatahub.io/accelerator-name": "",
             "opendatahub.io/apiProtocol": "REST",
@@ -744,6 +745,7 @@ def create_kserve_ovms_runtime(namespace: Namespace) -> ServingRuntime:
             "prometheus.io/path": "/metrics",
             "prometheus.io/port": "8888",
         },
+        label={"opendatahub.io/dashboard": "true"},
         volumes=[{"name": "shm", "emptyDir": {"medium": "Memory", "sizeLimit": "2Gi"}}],
     )
 

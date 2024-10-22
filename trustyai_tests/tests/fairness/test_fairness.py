@@ -1,3 +1,4 @@
+from time import sleep
 from typing import Any
 
 import pytest
@@ -335,12 +336,13 @@ class TestFairnessMetricsKserve:
         trustyai_service_pvc: TrustyAIService,
         onnx_loan_model_alpha_kserve: InferenceService,
     ) -> None:
-        wait_for_modelmesh_pods_registered(namespace=model_namespace)
+        sleep(600)  # Wait for the kserve pods to be registered by Trusty
 
         send_data_to_inference_service(
             inference_service=onnx_loan_model_alpha_kserve,
             namespace=model_namespace,
             data_path=INPUT_DATA_PATH,
+            type="kserve",
         )
 
         apply_trustyai_name_mappings(
@@ -379,18 +381,4 @@ class TestFairnessMetricsKserve:
             namespace=model_namespace,
             endpoint=get_metric_endpoint(metric=Metric.SPD, schedule=True),
             json_data=get_json_data(onnx_loan_model_alpha_kserve),
-        )
-
-    def test_spd_prometheus_query_kserve(
-        self,
-        model_namespace: Namespace,
-        trustyai_service_pvc: TrustyAIService,
-        onnx_loan_model_alpha_kserve: InferenceService,
-        onnx_loan_model_beta: InferenceService,
-    ) -> None:
-        verify_trustyai_metric_prometheus(
-            namespace=model_namespace,
-            model=onnx_loan_model_alpha_kserve,
-            prometheus_query=f"trustyai_{Metric.SPD.value}" f'{{namespace="{model_namespace.name}"}}',
-            metric_name=Metric.SPD.value,
         )

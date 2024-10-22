@@ -50,7 +50,10 @@ def onnx_loan_model_alpha(
 
 @pytest.fixture(scope="class")
 def onnx_loan_model_alpha_kserve(
-    client: DynamicClient, model_namespace: Namespace, minio_data_connection: Secret, ovms_runtime: ServingRuntime
+    client: DynamicClient,
+    model_namespace: Namespace,
+    minio_data_connection: Secret,
+    ovms_runtime_kserve: ServingRuntime,
 ) -> InferenceService:
     with InferenceService(
         client=client,
@@ -59,11 +62,10 @@ def onnx_loan_model_alpha_kserve(
         predictor={
             "maxReplicas": 1,
             "minReplicas": 1,
-            "logger": {"mode": "all", "url": "https://message-dumper.default/"},
             "model": {
                 "modelFormat": {"name": ONNX, "version": "1"},
                 "resources": {"limits": {"cpu": "2", "memory": "8Gi"}, "requests": {"cpu": "1", "memory": "4Gi"}},
-                "runtime": ovms_runtime.name,
+                "runtime": ovms_runtime_kserve.name,
                 "storage": {"key": minio_data_connection.name, "path": "ovms/loan_model_alpha"},
             },
         },
