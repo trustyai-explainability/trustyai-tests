@@ -44,4 +44,6 @@
   version: 0.37.1
   namespace: openshift-operators-mariadb
   correspondingPods:
-    - opendatahub-operator
+    - mariadb-operator
+    - mariadb-operator-cert
+    - mariadb-operator-webhook
