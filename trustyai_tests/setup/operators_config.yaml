@@ -36,3 +36,12 @@
   namespace: openshift-operators-odh
   correspondingPods:
     - opendatahub-operator
+-
+  name: mariadb-operator
+  channel: alpha
+  catalogSource: community-operators
+  repository: https://github.com/mariadb-operator/mariadb-operator
+  version: 0.37.1
+  namespace: openshift-operators-mariadb
+  correspondingPods:
+    - opendatahub-operator

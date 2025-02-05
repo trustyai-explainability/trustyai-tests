@@ -130,25 +130,6 @@ def db_credentials(model_namespace):
         yield db_credentials
 
 
-@pytest.fixture(scope="session")
-def mariadb_operator() -> Generator:
-    client = get_client()
-    name = "mariadb-operator"
-    namespace = "openshift-operators"
-    install_operator(
-        admin_client=client,
-        target_namespaces=[namespace],
-        name=name,
-        channel="alpha",
-        source="community-operators",
-        operator_namespace=namespace,
-        timeout=600,
-        install_plan_approval="Manual",
-    )
-    sleep(60)
-    yield
-    uninstall_operator(admin_client=client, name=name, operator_namespace=namespace, clean_up_namespace=False)
-
 
 @pytest.fixture(scope="session")
 def mariadb_operator_cr(mariadb_operator: None) -> MariadbOperator:
