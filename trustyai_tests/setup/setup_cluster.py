@@ -102,7 +102,7 @@ def install_operators(client, operator_data):
                 "channel": operator["channel"],
                 "source": operator["catalogSource"],
                 "operator_namespace": operator["namespace"],
-                "timeout": 600,
+                "timeout": 900,
                 "install_plan_approval": "Manual",
                 "starting_csv": f"{operator['name']}.v{operator['version']}",
             },
