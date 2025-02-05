@@ -130,7 +130,7 @@ def db_credentials(model_namespace):
 
 
 @pytest.fixture(scope="session")
-def mariadb_operator_cr(mariadb_operator: None) -> MariadbOperator:
+def mariadb_operator_cr() -> MariadbOperator:
     with MariadbOperator(yaml_file="trustyai_tests/manifests/mariadb-operator.yaml") as mariadb_operator:
         mariadb_operator.wait_for_condition(
             condition="Deployed", status=mariadb_operator.Condition.Status.TRUE, timeout=10 * 60
