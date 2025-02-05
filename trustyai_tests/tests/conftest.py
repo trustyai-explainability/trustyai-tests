@@ -16,7 +16,6 @@ from ocp_resources.service import Service
 from ocp_resources.service_account import ServiceAccount
 from ocp_resources.trustyai_service import TrustyAIService
 from ocp_resources.mariadb_operator import MariadbOperator
-from ocp_utilities.operators import install_operator, uninstall_operator
 
 from trustyai_tests.tests.constants import (
     TRUSTYAI_SERVICE,
@@ -128,7 +127,6 @@ def db_credentials(model_namespace):
         },
     ) as db_credentials:
         yield db_credentials
-
 
 
 @pytest.fixture(scope="session")
