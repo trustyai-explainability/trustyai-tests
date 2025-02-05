@@ -177,7 +177,6 @@ def setup_cluster(args):
             fr.seek(0)
             with open(os.path.join(args.artifact_dir, "operators_config.yaml"), "w") as fw:
                 fw.write(fr.read())
-            logger.info("Installing the following operator configurations: " + json.dumps(operator_data, indent=4))
     except FileNotFoundError as e:
         logger.error(f"Operator config yaml {operator_config_yaml} not found:")
         logger.error(e)
@@ -187,6 +186,7 @@ def setup_cluster(args):
 
     # make sure cluster is ready for operator installation
     if not args.skip_operators_installation:
+        logger.info("Installing the following operator configurations: " + json.dumps(operator_data, indent=4))
         wait_for_catalog_sources(client, operator_data)
         wait_for_package_manifests(client, operator_data)
 
