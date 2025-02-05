@@ -1,6 +1,7 @@
 from io import StringIO
 
 import argparse
+import json
 import logging
 import os
 import pathlib
@@ -176,6 +177,7 @@ def setup_cluster(args):
             fr.seek(0)
             with open(os.path.join(args.artifact_dir, "operators_config.yaml"), "w") as fw:
                 fw.write(fr.read())
+            logger.info("Installing the following operator configurations: " + json.dumps(operator_data, indent=4))
     except FileNotFoundError as e:
         logger.error(f"Operator config yaml {operator_config_yaml} not found:")
         logger.error(e)
