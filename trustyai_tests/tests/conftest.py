@@ -15,7 +15,6 @@ from ocp_resources.secret import Secret
 from ocp_resources.service import Service
 from ocp_resources.service_account import ServiceAccount
 from ocp_resources.trustyai_service import TrustyAIService
-from ocp_resources.mariadb_operator import MariadbOperator
 
 from trustyai_tests.tests.constants import (
     TRUSTYAI_SERVICE,
@@ -23,7 +22,6 @@ from trustyai_tests.tests.constants import (
 )
 from trustyai_tests.tests.minio import create_minio_secret, create_minio_pod, create_minio_service
 from trustyai_tests.tests.utils import (
-    wait_for_mariadb_operator_pods,
     wait_for_mariadb_pods,
 )
 from trustyai_tests.tests.utils import logger, is_odh_or_rhoai, wait_for_trustyai_pod_running
@@ -129,19 +127,8 @@ def db_credentials(model_namespace):
         yield db_credentials
 
 
-@pytest.fixture(scope="session")
-def mariadb_operator_cr() -> MariadbOperator:
-    with MariadbOperator(yaml_file="trustyai_tests/manifests/mariadb-operator.yaml") as mariadb_operator:
-        mariadb_operator.wait_for_condition(
-            condition="Deployed", status=mariadb_operator.Condition.Status.TRUE, timeout=10 * 60
-        )
-        wait_for_mariadb_operator_pods(mariadb_operator=mariadb_operator)
-        sleep(60)
-        yield mariadb_operator
-
-
 @pytest.fixture(scope="class")
-def mariadb(model_namespace, db_credentials, mariadb_operator_cr: MariadbOperator) -> MariaDB:
+def mariadb(model_namespace, db_credentials) -> MariaDB:
     with MariaDB(yaml_file="trustyai_tests/manifests/mariadb.yaml") as mariadb:
         wait_for_mariadb_pods(mariadb=mariadb)
         sleep(60)

@@ -4,7 +4,7 @@
   catalogSource: community-operators
   repository: https://github.com/Kuadrant/authorino-operator
   version: 0.16.0
-  namespace: openshift-operators
+  namespace: auth-openshift-operators
   correspondingPods:
     - authorino-operator
 -
@@ -33,7 +33,7 @@
   catalogSource: community-operators
   repository: https://github.com/opendatahub-io/opendatahub-operator
   version: 2.22.0
-  namespace: openshift-operators-odh
+  namespace: odh-openshift-operators
   correspondingPods:
     - opendatahub-operator
 -
@@ -42,6 +42,6 @@
   catalogSource: community-operators
   repository: https://github.com/mariadb-operator/mariadb-operator
   version: 0.37.1
-  namespace: openshift-operators-mariadb
+  namespace: openshift-operators
   correspondingPods:
     - mariadb-operator-helm
