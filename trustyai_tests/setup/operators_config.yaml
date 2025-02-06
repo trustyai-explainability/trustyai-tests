@@ -32,7 +32,16 @@
   channel: fast
   catalogSource: community-operators
   repository: https://github.com/opendatahub-io/opendatahub-operator
-  version: 2.20.0
+  version: 2.22.0
   namespace: openshift-operators-odh
   correspondingPods:
     - opendatahub-operator
+-
+  name: mariadb-operator
+  channel: alpha
+  catalogSource: community-operators
+  repository: https://github.com/mariadb-operator/mariadb-operator
+  version: 0.37.1
+  namespace: openshift-operators-mariadb
+  correspondingPods:
+    - mariadb-operator-helm

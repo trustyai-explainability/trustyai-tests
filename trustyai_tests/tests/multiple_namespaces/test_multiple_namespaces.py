@@ -22,6 +22,8 @@ from trustyai_tests.tests.utils import (
 )
 @pytest.mark.openshift
 @pytest.mark.heavy
+@pytest.mark.pvc
+@pytest.mark.modelmesh
 class TestMultipleNamespaces:
     """
     Tests that TrustyAI Operator can handle multiple namespaces.

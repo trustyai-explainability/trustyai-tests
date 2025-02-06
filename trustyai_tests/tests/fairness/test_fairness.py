@@ -51,6 +51,8 @@ def get_json_data(inference_service: InferenceService) -> dict[str, Any]:
 
 
 @pytest.mark.openshift
+@pytest.mark.pvc
+@pytest.mark.modelmesh
 class TestFairnessMetricsPVC:
     """
     Verifies the different fairness metrics available in TrustyAI, using PVC storage.
@@ -184,6 +186,8 @@ class TestFairnessMetricsPVC:
 
 
 @pytest.mark.openshift
+@pytest.mark.db
+@pytest.mark.modelmesh
 class TestFairnessMetricsDB:
     """
     Verifies the different fairness metrics available in TrustyAI, using DB storage.
@@ -317,6 +321,8 @@ class TestFairnessMetricsDB:
 
 
 @pytest.mark.openshift
+@pytest.mark.pvc
+@pytest.mark.kserve
 class TestFairnessMetricsKserve:
     """
     Verifies the different fairness metrics available in TrustyAI, using Kserve model serving.

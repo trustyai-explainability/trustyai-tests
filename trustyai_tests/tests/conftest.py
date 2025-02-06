@@ -16,7 +16,6 @@ from ocp_resources.service import Service
 from ocp_resources.service_account import ServiceAccount
 from ocp_resources.trustyai_service import TrustyAIService
 from ocp_resources.mariadb_operator import MariadbOperator
-from ocp_utilities.operators import install_operator, uninstall_operator
 
 from trustyai_tests.tests.constants import (
     TRUSTYAI_SERVICE,
@@ -131,27 +130,7 @@ def db_credentials(model_namespace):
 
 
 @pytest.fixture(scope="session")
-def mariadb_operator() -> Generator:
-    client = get_client()
-    name = "mariadb-operator"
-    namespace = "openshift-operators"
-    install_operator(
-        admin_client=client,
-        target_namespaces=[namespace],
-        name=name,
-        channel="alpha",
-        source="community-operators",
-        operator_namespace=namespace,
-        timeout=600,
-        install_plan_approval="Manual",
-    )
-    sleep(60)
-    yield
-    uninstall_operator(admin_client=client, name=name, operator_namespace=namespace, clean_up_namespace=False)
-
-
-@pytest.fixture(scope="session")
-def mariadb_operator_cr(mariadb_operator: None) -> MariadbOperator:
+def mariadb_operator_cr() -> MariadbOperator:
     with MariadbOperator(yaml_file="trustyai_tests/manifests/mariadb-operator.yaml") as mariadb_operator:
         mariadb_operator.wait_for_condition(
             condition="Deployed", status=mariadb_operator.Condition.Status.TRUE, timeout=10 * 60

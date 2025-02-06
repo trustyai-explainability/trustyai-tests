@@ -21,6 +21,8 @@ from trustyai_tests.tests.constants import (
 
 
 @pytest.mark.openshift
+@pytest.mark.pvc
+@pytest.mark.modelmesh
 class TestDriftMetricsPVC:
     """
     Verifies the different input data drift metrics available in TrustyAI, using PVC storage.
@@ -177,6 +179,8 @@ class TestDriftMetricsPVC:
 
 
 @pytest.mark.openshift
+@pytest.mark.db
+@pytest.mark.modelmesh
 class TestDriftMetricsDB:
     """
     Verifies the different input data drift metrics available in TrustyAI, using DB storage.

@@ -757,7 +757,6 @@ def wait_for_mariadb_operator_pods(mariadb_operator: MariadbOperator, timeout: i
     expected_pods: List[str] = [
         "mariadb-operator",
         "mariadb-operator-cert-controller",
-        "mariadb-operator-helm-controller-manager",
         "mariadb-operator-webhook",
     ]
 

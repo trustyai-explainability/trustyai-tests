@@ -1,6 +1,7 @@
 from io import StringIO
 
 import argparse
+import json
 import logging
 import os
 import pathlib
@@ -101,7 +102,7 @@ def install_operators(client, operator_data):
                 "channel": operator["channel"],
                 "source": operator["catalogSource"],
                 "operator_namespace": operator["namespace"],
-                "timeout": 600,
+                "timeout": 900,
                 "install_plan_approval": "Manual",
                 "starting_csv": f"{operator['name']}.v{operator['version']}",
             },
@@ -185,6 +186,7 @@ def setup_cluster(args):
 
     # make sure cluster is ready for operator installation
     if not args.skip_operators_installation:
+        logger.info("Installing the following operator configurations: " + json.dumps(operator_data, indent=4))
         wait_for_catalog_sources(client, operator_data)
         wait_for_package_manifests(client, operator_data)
 
