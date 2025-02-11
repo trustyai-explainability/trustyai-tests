@@ -3,7 +3,6 @@ kind: MariadbOperator
 apiVersion: helm.mariadb.mmontes.io/v1alpha1
 metadata:
   name: mariadb-operator
-  namespace: openshift-operators
 spec:
   affinity: {}
   certController:

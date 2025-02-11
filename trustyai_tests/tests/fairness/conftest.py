@@ -71,7 +71,7 @@ def onnx_loan_model_alpha_kserve(
         },
         annotations={
             "openshift.io/display-name": "demo-loan-nn-onnx-alpha",
-            "security.opendatahub.io/enable-auth": "true",
+            # "security.opendatahub.io/enable-auth": "true",
             "serving.knative.openshift.io/enablePassthrough": "true",
             "sidecar.istio.io/inject": "true",
             "sidecar.istio.io/rewriteAppHTTPProbers": "true",

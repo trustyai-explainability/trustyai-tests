@@ -1,3 +1,4 @@
+import time
 from io import StringIO
 
 import argparse
@@ -6,12 +7,15 @@ import logging
 import os
 import pathlib
 import sys
+from time import sleep
 import yaml
+import multiprocessing
 from multiprocessing import Process
 
 from ocp_resources.catalog_source import CatalogSource
 from ocp_resources.data_science_cluster import DataScienceCluster
 from ocp_resources.dsc_initialization import DSCInitialization
+from ocp_resources.mariadb_operator import MariadbOperator
 from ocp_resources.namespace import Namespace
 from ocp_resources.package_manifest import PackageManifest
 from ocp_resources.pod import Pod
@@ -92,6 +96,7 @@ def install_operators(client, operator_data):
     header("Installing Operators")
 
     processes = []
+    multiprocessing.set_start_method("fork")
     for operator in operator_data:
         p = Process(
             target=install_operator,
@@ -108,6 +113,8 @@ def install_operators(client, operator_data):
             },
         )
         p.start()
+        time.sleep(1)
+
         processes.append(p)
     [p.join() for p in processes]
 
@@ -167,6 +174,18 @@ def install_datascience_cluster(client, trustyai_manifests_url):
     dsc.wait_for_status(status=DataScienceCluster.Status.READY, timeout=900)
 
 
+def install_mariadb_operator_cr(client, namespace):
+    """Install a mariadboperator instance"""
+    header("Installing MariaDBOperator CR")
+    mdb_op = MariadbOperator(
+        client=client,
+        yaml_file="trustyai_tests/manifests/mariadb-operator.yaml",
+        namespace=namespace,
+    )
+    mdb_op.deploy()
+    mdb_op.wait_for_condition(condition="Deployed", status=mdb_op.Condition.Status.TRUE, timeout=10 * 60)
+
+
 # === MAIN =========================================================================================
 def setup_cluster(args):
     # load config info
@@ -182,6 +201,8 @@ def setup_cluster(args):
         logger.error(e)
         raise e
 
+    namespaces = {od["name"]: od["namespace"] for od in operator_data}
+
     client = get_client()
 
     # make sure cluster is ready for operator installation
@@ -193,6 +214,8 @@ def setup_cluster(args):
         # install prereq operators
         install_operators(client, operator_data)
         verify_operator_running(client, operator_data)
+
+        install_mariadb_operator_cr(client, namespaces["mariadb-operator"])
 
     if not args.skip_dsc_installation:
         # create odh namespace
