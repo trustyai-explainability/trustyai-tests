@@ -817,31 +817,81 @@ def get_num_running_containers(pod, return_string=False):
         return sum(containers)
 
 
-def log_namespace_events(artifacts_dir, namespace, client):
+def log_namespace_events(artifacts_dir, client, namespace, directory, subdirectories=None):
     """Log events in provided namespace to artifacts dir"""
     event_log = ""
     for event in Event.get(dyn_client=client, namespace=namespace, timeout=3):
         event_log += yaml.dump(event["raw_object"])
         event_log += "\n\n"
 
-    with open(os.path.join(artifacts_dir, "{}-events.txt".format(namespace)), "w") as f:
+    parent_path = os.path.join(artifacts_dir, directory, namespace)
+    if subdirectories:
+        parent_path = os.path.join(parent_path, *subdirectories)
+
+    if not os.path.exists(parent_path):
+        os.makedirs(parent_path)
+
+    with open(os.path.join(parent_path, "events.txt"), "w") as f:
         f.write(event_log)
 
 
-def log_namespace_pods(artifacts_dir, namespace):
+def log_namespace_pods(artifacts_dir, namespace, directory, subdirectories=None):
     """Log yaml and summary for all pods in provided namespace to artifacts dir"""
 
-    pod_log = ""
     fmt_str = "{:<100} {:>10} {:>10}\n"
     pod_status_log = fmt_str.format("NAME", "READY", "STATUS")
+
+    parent_path = os.path.join(artifacts_dir, directory, namespace)
+    if subdirectories:
+        parent_path = os.path.join(parent_path, *subdirectories)
+
     for pod in Pod.get(namespace=namespace, timeout=3):
-        pod_log += yaml.dump(pod.instance.to_dict())
-        pod_log += "\n\n"
+        subpath = os.path.join(parent_path, "pods", pod.name)
+
+        if not os.path.exists(subpath):
+            os.makedirs(subpath)
+
+        with open(os.path.join(subpath, f"{pod.name}.yaml"), "w") as f:
+            f.write(yaml.dump(pod.instance.to_dict()))
 
         pod_status_log += fmt_str.format(pod.name, get_num_running_containers(pod), pod.status)
 
-    with open(os.path.join(artifacts_dir, "{}-pods-yamls.txt".format(namespace)), "w") as f:
-        f.write(pod_log)
-
-    with open(os.path.join(artifacts_dir, "{}-get-pods.txt".format(namespace)), "w") as f:
+    with open(os.path.join(parent_path, "oc-get-pods.txt"), "w") as f:
         f.write(pod_status_log)
+
+
+def log_namespace_logs(artifacts_dir, namespace, directory, subdirectories=None):
+    # temporary mute the kubernetes rest client logger, as it really pollutes the logs
+    logger = logging.getLogger("kubernetes.client.rest")
+    original_level = logger.getEffectiveLevel()
+    logger.setLevel(logging.INFO)
+
+    parent_path = os.path.join(artifacts_dir, directory, namespace)
+    if subdirectories:
+        parent_path = os.path.join(parent_path, *subdirectories)
+
+    for pod in Pod.get(namespace=namespace, timeout=3):
+        subpath = os.path.join(parent_path, "pods", pod.name, "logs")
+
+        if not os.path.exists(subpath):
+            os.makedirs(subpath)
+
+        for container in pod.exists.status["containerStatuses"]:
+            with open(os.path.join(subpath, f"{container['name']}.log"), "w") as f:
+                f.write(pod.log(container=container["name"]))
+
+    # restore the kubernetes rest client log level
+    logger.setLevel(original_level)
+
+def per_test_artifacting_logic(request, client, subdirectories):
+    test_name = request.node.name
+    if os.environ.get("ARTIFACT_DIR"):
+        artifact_dir = os.environ.get("ARTIFACT_DIR")
+        log_namespace_pods(artifact_dir, namespace="test-namespace", directory=test_name, subdirectories=subdirectories)
+        log_namespace_events(
+            artifact_dir, client=client, namespace="test-namespace", directory=test_name, subdirectories=subdirectories
+        )
+        log_namespace_logs(artifact_dir, namespace="test-namespace", directory=test_name, subdirectories=subdirectories)
+    else:
+        pass
+
