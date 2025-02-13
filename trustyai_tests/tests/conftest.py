@@ -1,3 +1,4 @@
+import os
 from time import sleep
 from typing import Any, Generator, Optional
 
@@ -23,6 +24,10 @@ from trustyai_tests.tests.constants import (
 from trustyai_tests.tests.minio import create_minio_secret, create_minio_pod, create_minio_service
 from trustyai_tests.tests.utils import (
     wait_for_mariadb_pods,
+    log_namespace_pods,
+    log_namespace_events,
+    log_namespace_logs,
+    per_test_artifacting_logic,
 )
 from trustyai_tests.tests.utils import logger, is_odh_or_rhoai, wait_for_trustyai_pod_running
 
@@ -56,6 +61,13 @@ def use_modelmesh_image(request):
 @pytest.fixture(scope="session")
 def client() -> DynamicClient:
     yield get_client()
+
+
+@pytest.fixture(autouse=True)
+def test_logging(request, client):
+    per_test_artifacting_logic(request, client, ["pre-test"])
+    yield
+    per_test_artifacting_logic(request, client, ["post-test"])
 
 
 @pytest.fixture(autouse=True, scope="session")

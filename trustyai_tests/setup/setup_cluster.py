@@ -25,7 +25,12 @@ from ocp_utilities.operators import install_operator
 
 from timeout_sampler import TimeoutSampler, TimeoutExpiredError
 
-from trustyai_tests.tests.utils import log_namespace_events, get_num_running_containers, log_namespace_pods
+from trustyai_tests.tests.utils import (
+    log_namespace_events,
+    get_num_running_containers,
+    log_namespace_pods,
+    log_namespace_logs,
+)
 
 logger: logging.Logger = logging.getLogger(__name__)
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -225,9 +230,10 @@ def setup_cluster(args):
         install_dsci(client)
         install_datascience_cluster(client, args.trustyai_manifests_url)
 
-    for namespace in ["opendatahub", "openshift-operators"]:
-        log_namespace_pods(args.artifact_dir, namespace)
-        log_namespace_events(args.artifact_dir, namespace, client)
+    for namespace in ["opendatahub"] + list(set(namespaces.values())):
+        log_namespace_pods(args.artifact_dir, namespace=namespace, directory="cluster-setup")
+        log_namespace_events(args.artifact_dir, client=client, namespace=namespace, directory="cluster-setup")
+        log_namespace_logs(args.artifact_dir, namespace=namespace, directory="cluster-setup")
 
 
 if __name__ == "__main__":
