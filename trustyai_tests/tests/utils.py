@@ -883,6 +883,7 @@ def log_namespace_logs(artifacts_dir, namespace, directory, subdirectories=None)
     # restore the kubernetes rest client log level
     logger.setLevel(original_level)
 
+
 def per_test_artifacting_logic(request, client, subdirectories):
     test_name = request.node.name
     if os.environ.get("ARTIFACT_DIR"):
@@ -894,4 +895,3 @@ def per_test_artifacting_logic(request, client, subdirectories):
         log_namespace_logs(artifact_dir, namespace="test-namespace", directory=test_name, subdirectories=subdirectories)
     else:
         pass
-

@@ -26,7 +26,8 @@ from trustyai_tests.tests.utils import (
     wait_for_mariadb_pods,
     log_namespace_pods,
     log_namespace_events,
-    log_namespace_logs, per_test_artifacting_logic,
+    log_namespace_logs,
+    per_test_artifacting_logic,
 )
 from trustyai_tests.tests.utils import logger, is_odh_or_rhoai, wait_for_trustyai_pod_running
 
