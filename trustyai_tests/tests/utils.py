@@ -856,6 +856,9 @@ def log_namespace_pods(artifacts_dir, namespace, directory, subdirectories=None)
 
         pod_status_log += fmt_str.format(pod.name, get_num_running_containers(pod), pod.status)
 
+    if not os.path.exists(parent_path):
+        os.makedirs(parent_path)
+
     with open(os.path.join(parent_path, "oc-get-pods.txt"), "w") as f:
         f.write(pod_status_log)
 
