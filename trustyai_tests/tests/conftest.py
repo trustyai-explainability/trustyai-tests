@@ -155,7 +155,7 @@ def modelmesh_serviceaccount(client: DynamicClient, model_namespace: Namespace) 
 
 @pytest.fixture(scope="session")
 def cluster_monitoring_config(client: DynamicClient) -> ConfigMap:
-    config_yaml = yaml.dump({"enableUserWorkload": "true"})
+    config_yaml = yaml.dump({"enableUserWorkload": True})
     name = "cluster-monitoring-config"
     namespace = "openshift-monitoring"
     try:
